@@ -38,27 +38,33 @@ struct {
 
 // Function to print integer to console
 static void print_integer(int value, int base, int is_signed) {
-    static char digits[] = "0123456789abcdef";
-    char buffer[16];
-    int i;
-    uint x;
+    static char digits[] = "0123456789abcdef"; // This array holds characters representing digits 0-9 and a-f for hexadecimal values.
+    char buffer[16];  // A temporary buffer to store the characters of the number to be printed.
+    int i;            // An index variable used to track the position in the buffer.
+    uint x;           // Unsigned integer to hold the absolute value of the number being printed.
 
+    // Check if the value is signed and negative, and if so, convert it to its positive counterpart.
     if (is_signed && (is_signed = value < 0))
         x = -value;
     else
         x = value;
 
+    // Convert the value to the specified base (e.g., decimal, hexadecimal) by repeatedly dividing by the base.
+    // The remainder of each division gives the next digit to be stored.
     i = 0;
     do {
-        buffer[i++] = digits[x % base];
-    } while ((x /= base) != 0);
+        buffer[i++] = digits[x % base];  // Store the current digit (using the remainder) in the buffer.
+    } while ((x /= base) != 0);  // Continue dividing x by the base until x becomes 0.
 
+    // If the original value was negative, add the minus sign to the buffer.
     if (is_signed)
         buffer[i++] = '-';
 
+    // Print the number from the buffer in reverse order (since the digits are stored in reverse).
     while (--i >= 0)
-        console_output_char(buffer[i]);
+        console_output_char(buffer[i]);  // Output the digits to the console, one by one.
 }
+
 
 // Print to the console. Only understands %d, %x, %p, %s.
 void cprintf(char* fmt, ...) {
