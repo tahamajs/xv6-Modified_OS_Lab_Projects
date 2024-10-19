@@ -15,7 +15,7 @@
 #include "proc.h"
 #include "x86.h"
 
-// Forward declaration of console output function
+// Forward declaration of console output function.
 static void console_output_char(int c);
 
 static int panicked = 0;
