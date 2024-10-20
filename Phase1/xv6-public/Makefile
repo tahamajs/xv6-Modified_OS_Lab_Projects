@@ -79,7 +79,7 @@ AS = $(TOOLPREFIX)gas
 LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
-CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer
+CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -g 
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
 # FreeBSD ld wants ``elf_i386_fbsd''
@@ -178,6 +178,7 @@ UPROGS=\
 	_ln\
 	_encode\
     _decode\
+	_fibonacci\
 	_ls\
 	_mkdir\
 	_rm\
@@ -254,7 +255,7 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 # check in that version.
 
 
-
+# Lists the object files for the user libraries needed by your program
 ULIB = ulib.o usys.o printf.o umalloc.o
 
 encode: encode.o $(ULIB)
@@ -267,6 +268,10 @@ decode: decode.o $(ULIB)
 	$(OBJDUMP) -S decode > decode.asm
 	$(OBJDUMP) -t decode | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > decode.sym
 
+fibonacci: fibonacci.o $(ULIB)
+	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o fibonacci fibonacci.o $(ULIB)
+	$(OBJDUMP) -S fibonacci > fibonacci.asm
+	$(OBJDUMP) -t fibonacci | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > fibonacci.sym
 
 
 
