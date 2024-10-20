@@ -253,12 +253,11 @@ static void console_erase_line(void) {
 }
 
 // Erase line without clearing input buffer
-static void console_erase_line_without_clearing_buffer(void) {
+static void console_erase_line_without_clearing_buffer(int num_chars) {
     move_cursor_to_end();
     input_buffer.cursor_shift = 0;
-
-    while (input_buffer.edit_index != input_buffer.write_index &&
-           input_buffer.buffer[(input_buffer.edit_index - 1) % INPUT_BUFFER_SIZE] != '\n') {
+    
+    for (int i = 0; i < num_chars; i++) {
         input_buffer.edit_index--;
         console_output_char(BACKSPACE);
     }
@@ -526,13 +525,14 @@ static int evaluate_expression_from_end(int end_idx, int* result) {
         case '/':
             if (num2 == 0)
                 return 0;
+
             *result = num1 / num2;
             break;
         default:
             return 0;
     }
-
     return end_idx - idx;
+
 }
 
 // Process input buffer and replace 'N O N=?' patterns with result
@@ -591,7 +591,9 @@ static void process_input_buffer(void) {
                 }
 
                 //clean the console
-                console_erase_line_without_clearing_buffer();
+                console_erase_line_without_clearing_buffer(total_len);
+
+                // console_output_char(res_len + '0');
 
                 //inset result in consule output
                 for (int j = 0; j < res_len; j++) {
@@ -720,7 +722,6 @@ void consoleintr(int (*getc)(void)) {
 
                     process_input_buffer();
                     if (c == '\n' && input_buffer.edit_index - input_buffer.write_index > 0) {
-
                         reset_command_history();
                         input_buffer.cursor_shift = 0;
                     }
