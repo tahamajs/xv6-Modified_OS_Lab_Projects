@@ -1,7 +1,6 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#include "fcntl.h"
 
 // Function to calculate Fibonacci numbers recursively
 int fibonacci(int n) {
