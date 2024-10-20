@@ -43,24 +43,19 @@ static void print_integer(int value, int base, int is_signed) {
     int i;            // An index variable used to track the position in the buffer.
     uint x;           // Unsigned integer to hold the absolute value of the number being printed.
 
-    // Check if the value is signed and negative, and if so, convert it to its positive counterpart.
     if (is_signed && (is_signed = value < 0))
         x = -value;
     else
         x = value;
 
-    // Convert the value to the specified base (e.g., decimal, hexadecimal) by repeatedly dividing by the base.
-    // The remainder of each division gives the next digit to be stored.
     i = 0;
     do {
         buffer[i++] = digits[x % base];  // Store the current digit (using the remainder) in the buffer.
     } while ((x /= base) != 0);  // Continue dividing x by the base until x becomes 0.
 
-    // If the original value was negative, add the minus sign to the buffer.
     if (is_signed)
         buffer[i++] = '-';
 
-    // Print the number from the buffer in reverse order (since the digits are stored in reverse).
     while (--i >= 0)
         console_output_char(buffer[i]);  // Output the digits to the console, one by one.
 }
@@ -135,12 +130,10 @@ void panic(char* s) {
         ;
 }
 
-// Console constants and variables
 #define BACKSPACE 0x100
 #define CRTPORT   0x3d4
 static ushort* crt = (ushort*)P2V(0xb8000); // CGA memory
 
-// Cursor position: col + 80*row.
 static int get_cursor_position(void) {
     int pos;
     outb(CRTPORT, 14);
@@ -363,8 +356,7 @@ static void store_command(void) {
     for (; j < INPUT_BUFFER_SIZE; j++) {
         command_history.buffer[0][j] = 0;
     }
-    if (command_history.write_index < COMMAND_HISTORY_SIZE)
-        command_history.write_index++;
+
 }
 
 // Load command from history buffer
