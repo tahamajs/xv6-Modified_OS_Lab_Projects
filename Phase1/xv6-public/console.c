@@ -252,6 +252,18 @@ static void console_erase_line(void) {
     }
 }
 
+// Erase line without clearing input buffer
+static void console_erase_line_without_clearing_buffer(void) {
+    move_cursor_to_end();
+    input_buffer.cursor_shift = 0;
+
+    while (input_buffer.edit_index != input_buffer.write_index &&
+           input_buffer.buffer[(input_buffer.edit_index - 1) % INPUT_BUFFER_SIZE] != '\n') {
+        input_buffer.edit_index--;
+        console_output_char(BACKSPACE);
+    }
+}
+
 // Erase terminal screen
 static void console_clear_screen(void) {
     int pos = get_cursor_position();
@@ -578,6 +590,16 @@ static void process_input_buffer(void) {
                     input_buffer.buffer[(start_pos + j) % INPUT_BUFFER_SIZE] = res_str[j];
                 }
 
+                //clean the console
+                console_erase_line_without_clearing_buffer();
+
+                //inset result in consule output
+                for (int j = 0; j < res_len; j++) {
+                    console_output_char(res_str[j]);
+                    // add to buffer
+                    input_buffer.buffer[input_buffer.edit_index++ % INPUT_BUFFER_SIZE] = res_str[j];
+                }
+
                 input_buffer.cursor_shift = 0;
 
                 // Adjust 'i' to continue processing correctly
@@ -696,8 +718,8 @@ void consoleintr(int (*getc)(void)) {
                         }
                     }
 
+                    process_input_buffer();
                     if (c == '\n' && input_buffer.edit_index - input_buffer.write_index > 0) {
-                        process_input_buffer();
 
                         reset_command_history();
                         input_buffer.cursor_shift = 0;
