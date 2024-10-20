@@ -10,11 +10,7 @@ int main(int argc, char *argv[]) {
     }
 
     int key = 4;
-    int fd = open("result.txt", O_CREATE | O_WRONLY);
-    if(fd < 0){
-        printf(1, "decode: cannot open result.txt\n");
-        exit();
-    }
+
 
     for(int i = 1; i < argc; i++){
         char *text = argv[i];
@@ -25,16 +21,15 @@ int main(int argc, char *argv[]) {
             } else if(c >= 'A' && c <= 'Z'){
                 c = ((c - 'A' - key + 26) % 26) + 'A';
             }
-            write(fd, &c, 1);
+            printf(1, "%c", c);
         }
         if(i < argc - 1){
             char space = ' ';
-            write(fd, &space, 1);
+            printf(1, " ");
         }
     }
     char newline = '\n';
-    write(fd, &newline, 1);
+    printf(1, "\n");
 
-    close(fd);
     exit();
 }
