@@ -18,8 +18,8 @@
 #include "param.h"
 // #include "fs.h"          // Add this line
 
-extern int sys_unlink(void);
 #define MAXPATH 128
+
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -184,6 +184,54 @@ isdirempty(struct inode *dp)
   }
   return 1;
 }
+int unlink(char *path) {
+    struct inode *ip, *dp;
+    struct dirent de;
+    char name[DIRSIZ];
+    uint off;
+
+    begin_op();
+    if ((dp = nameiparent(path, name)) == 0) {
+        end_op();
+        return -1;
+    }
+
+    ilock(dp);
+    if ((ip = dirlookup(dp, name, &off)) == 0) {
+        iunlockput(dp);
+        end_op();
+        return -1;
+    }
+    ilock(ip);
+
+    if (ip->nlink < 1)
+        panic("unlink: nlink < 1");
+
+    if (ip->type == T_DIR && !isdirempty(ip)) {
+        iunlockput(ip);
+        iunlockput(dp);
+        end_op();
+        return -1;
+    }
+
+    memset(&de, 0, sizeof(de));
+    if (writei(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+        panic("unlink: writei");
+
+    if (ip->type == T_DIR) {
+        dp->nlink--;
+        iupdate(dp);
+    }
+    iunlockput(dp);
+
+    ip->nlink--;
+    iupdate(ip);
+    iunlockput(ip);
+
+    end_op();
+    return 0;
+}
+
 
 //PAGEBREAK!
 int
@@ -465,10 +513,7 @@ safestrcat(char *s, const char *t, int max)
 // Forward declarations
 int fetch_filename(const char *path, char *filename);
 int create_link(const char *old, const char *new);
-
-// Implementation of sys_move_file
-int
-sys_move_file(void)
+int sys_move_file(void)
 {
     char *src_file, *dest_dir;
     char filename[DIRSIZ];
@@ -483,20 +528,8 @@ sys_move_file(void)
 
     // Construct full destination path
     safestrcpy(full_dest_path, dest_dir, MAXPATH);
-    int len = strlen(full_dest_path);
-    if (full_dest_path[len - 1] != '/') {
-        if (len + 1 < MAXPATH) {
-            full_dest_path[len] = '/';
-            full_dest_path[len + 1] = '\0';
-        } else {
-            return -1; // Path too long
-        }
-    }
-
-    if (strlen(full_dest_path) + strlen(filename) + 1 > MAXPATH)
-        return -1; // Path too long
-
-    safestrcpy(full_dest_path + strlen(full_dest_path), filename, MAXPATH - strlen(full_dest_path));
+    safestrcat(full_dest_path, "/", MAXPATH);
+    safestrcat(full_dest_path, filename, MAXPATH);
 
     begin_op();
 
@@ -518,6 +551,7 @@ sys_move_file(void)
 
     return 0;
 }
+
 
 // // Helper function to extract filename from path
 // int fetch_filename(const char *path, char *filename)
