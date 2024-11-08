@@ -15,6 +15,11 @@
 #include "sleeplock.h"
 #include "file.h"
 #include "fcntl.h"
+#include "param.h"
+// #include "fs.h"          // Add this line
+
+extern int sys_unlink(void);
+#define MAXPATH 128
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -442,3 +447,179 @@ sys_pipe(void)
   fd[1] = fd1;
   return 0;
 }
+int
+safestrcat(char *s, const char *t, int max)
+{
+    int i = strlen(s);
+    int j = 0;
+    while (i < max - 1 && t[j] != '\0') {
+        s[i++] = t[j++];
+    }
+    s[i] = '\0';
+    return i;
+}
+
+// sysfile.c
+// sysfile.c
+
+// Forward declarations
+int fetch_filename(const char *path, char *filename);
+int create_link(const char *old, const char *new);
+
+// Implementation of sys_move_file
+int
+sys_move_file(void)
+{
+    char *src_file, *dest_dir;
+    char filename[DIRSIZ];
+    char full_dest_path[MAXPATH];
+
+    if (argstr(0, &src_file) < 0 || argstr(1, &dest_dir) < 0)
+        return -1;
+
+    // Extract filename from src_file path
+    if (fetch_filename(src_file, filename) < 0)
+        return -1;
+
+    // Construct full destination path
+    safestrcpy(full_dest_path, dest_dir, MAXPATH);
+    int len = strlen(full_dest_path);
+    if (full_dest_path[len - 1] != '/') {
+        if (len + 1 < MAXPATH) {
+            full_dest_path[len] = '/';
+            full_dest_path[len + 1] = '\0';
+        } else {
+            return -1; // Path too long
+        }
+    }
+
+    if (strlen(full_dest_path) + strlen(filename) + 1 > MAXPATH)
+        return -1; // Path too long
+
+    safestrcpy(full_dest_path + strlen(full_dest_path), filename, MAXPATH - strlen(full_dest_path));
+
+    begin_op();
+
+    // Link the file to the new location
+    if (create_link(src_file, full_dest_path) < 0) {
+        end_op();
+        return -1;
+    }
+
+    // Unlink the original file
+    if (namei(src_file) == 0 || unlink(src_file) < 0) {
+        // Cleanup: remove the new link
+        unlink(full_dest_path);
+        end_op();
+        return -1;
+    }
+
+    end_op();
+
+    return 0;
+}
+
+// // Helper function to extract filename from path
+// int fetch_filename(const char *path, char *filename)
+// {
+//     const char *s = path + strlen(path);
+//     while (s >= path && *s != '/')
+//         s--;
+//     s++;
+//     safestrcpy(filename, s, DIRSIZ);
+//     return 0;
+// }
+
+// // Helper function to create a link
+// int create_link(const char *oldpath, const char *newpath)
+// {
+//     struct inode *dp, *ip;
+//     char name[DIRSIZ];
+
+//     if ((ip = namei(oldpath)) == 0)
+//         return -1;
+
+//     ilock(ip);
+//     if (ip->type == T_DIR) {
+//         iunlockput(ip);
+//         return -1;
+//     }
+//     ip->nlink++;
+//     iupdate(ip);
+//     iunlock(ip);
+
+//     if ((dp = nameiparent(newpath, name)) == 0)
+//         goto bad;
+//     ilock(dp);
+//     if (dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0) {
+//         iunlockput(dp);
+//         goto bad;
+//     }
+//     iunlockput(dp);
+//     iput(ip);
+
+//     return 0;
+
+// bad:
+//     ilock(ip);
+//     ip->nlink--;
+//     iupdate(ip);
+//     iunlockput(ip);
+//     return -1;
+// }
+int fetch_filename(const char *path, char *filename)
+{
+    char *s;
+    s = (char*)path + strlen(path) - 1;
+    while (s >= path && *s != '/')
+        s--;
+    s++;
+    safestrcpy(filename, s, DIRSIZ);
+    return 0;
+}
+
+int create_link(const char *old, const char *new)
+{
+    struct inode *ip;
+    char name[DIRSIZ];
+    struct inode *dp;
+
+    begin_op();
+    if((ip = namei(old)) == 0){
+        end_op();
+        return -1;
+    }
+
+    ilock(ip);
+    if(ip->type == T_DIR){
+        iunlockput(ip);
+        end_op();
+        return -1;
+    }
+
+    ip->nlink++;
+    iupdate(ip);
+    iunlock(ip);
+
+    if((dp = nameiparent(new, name)) == 0)
+        goto bad;
+    ilock(dp);
+    if(dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0){
+        iunlockput(dp);
+        goto bad;
+    }
+    iunlockput(dp);
+    iput(ip);
+
+    end_op();
+    return 0;
+
+bad:
+    ilock(ip);
+    ip->nlink--;
+    iupdate(ip);
+    iunlockput(ip);
+    end_op();
+    return -1;
+}
+

@@ -37,3 +37,11 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+
+
+// Added system calls
+int create_palindrome(int num);
+int move_file(const char *src_file, const char *dest_dir);
+int sort_syscalls(int pid);
+int get_most_invoked_syscall(int pid);
+int list_all_processes(void);

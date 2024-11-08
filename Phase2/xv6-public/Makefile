@@ -187,6 +187,11 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
+	_test_palindrome\
+    _test_move\
+    _test_sort_syscalls\
+    _test_get_most_invoked\
+    _test_list_processes\
 
 
 fs.img: mkfs README $(UPROGS)

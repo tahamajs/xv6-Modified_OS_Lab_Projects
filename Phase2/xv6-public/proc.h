@@ -1,3 +1,7 @@
+
+#pragma once
+
+#include "spinlock.h"  // Adjust the path if necessary to locate spinlock definition
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -9,6 +13,12 @@ struct cpu {
   int intena;                  // Were interrupts enabled before pushcli?
   struct proc *proc;           // The process running on this cpu or null
 };
+#define MAX_SYSCALLS 100
+extern int syscall_counts[MAX_SYSCALLS];  // Declare the array with the new name
+
+
+// struct proc proc_table[NPROC];  // Use a more descriptive name if possible
+
 
 extern struct cpu cpus[NCPU];
 extern int ncpu;
@@ -49,6 +59,9 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+      int syscalls[MAX_SYSCALLS];
+    int syscall_count;
+
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -56,3 +69,7 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+extern struct {
+    struct spinlock lock;
+    struct proc proc[NPROC];
+} ptable;

@@ -185,6 +185,8 @@ void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
+#define MAX_SYSCALLS 100
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+extern int syscall_counts[MAX_SYSCALLS];  // Adjust MAX_SYSCALLS to the correct size if needed

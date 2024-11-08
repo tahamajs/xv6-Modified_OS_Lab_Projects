@@ -1,4 +1,10 @@
 // Per-CPU state
+#pragma once
+
+#include "spinlock.h"
+#include "param.h"
+#include "types.h"
+
 struct cpu {
   uchar apicid;                // Local APIC ID
   struct context *scheduler;   // swtch() here to enter scheduler
@@ -56,3 +62,9 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+extern struct {
+  struct spinlock lock;
+  struct proc proc[NPROC];
+} ptable;
+extern struct ptable_type ptable;
+

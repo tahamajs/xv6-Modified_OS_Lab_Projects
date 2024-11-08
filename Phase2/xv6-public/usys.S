@@ -29,3 +29,10 @@ SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
+
+
+SYSCALL(create_palindrome)
+SYSCALL(move_file)
+SYSCALL(sort_syscalls)
+SYSCALL(get_most_invoked_syscall)
+SYSCALL(list_all_processes)
