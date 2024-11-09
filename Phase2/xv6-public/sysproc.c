@@ -94,9 +94,13 @@ int
 sys_create_palindrome(void)
 {
     int num;
-
+    //Fetch the first argument(user number)
     if (argint(0, &num) < 0)
         return -1;
+    if(num == 0){
+      cprintf("Palindrome: %d\n",num);
+      return 0;
+    }
 
     // Reverse the number
     int reversed = 0, temp = num;
@@ -122,14 +126,13 @@ sys_create_palindrome(void)
     for (int i = 0; i < digits; i++)
         multiplier *= 10;
 
-    // Create palindrome
-    int palindrome = num * multiplier + reversed;
 
-    cprintf("Palindrome: %d\n", palindrome);
+    //Print the result in the terminal
+    cprintf("Palindrome: %d%d\n", num,reversed);
 
     return 0;
 }
-// sysproc.c
+
 
 int
 sys_sort_syscalls(void)

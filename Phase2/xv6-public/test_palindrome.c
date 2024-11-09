@@ -11,6 +11,10 @@ int main(int argc, char *argv[]) {
     }
 
     int num = atoi(argv[1]);
+    if(num == 0 && argv[1][0] != '0'){
+        printf(2, "Usage: test_palindrome <number>\n");
+        exit();
+    }
     create_palindrome(num);
 
     exit();
