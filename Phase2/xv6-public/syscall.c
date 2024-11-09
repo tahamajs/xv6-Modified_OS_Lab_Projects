@@ -157,7 +157,8 @@ void syscall(void) {
     num = curproc->tf->eax;
     if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
         curproc->tf->eax = syscalls[num]();
-        syscall_counts[num]++;  // Increment the count for this syscall
+        curproc->syscalls[num]++;  // Increment the count of system calls for the process
+        syscall_counts[num]++;  //Increment the total number of system call usage count
     } else {
         // Handle invalid syscall number
         curproc->tf->eax = -1;
