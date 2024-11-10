@@ -192,6 +192,7 @@ UPROGS=\
     _test_sort_syscalls\
     _test_get_most_invoked\
     _test_list_processes\
+	_test_syscall_gdb\
 
 
 fs.img: mkfs README $(UPROGS)
