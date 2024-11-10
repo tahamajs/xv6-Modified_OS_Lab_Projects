@@ -60,7 +60,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
     int syscalls[MAX_SYSCALLS];//Save the number of each system call
-    int syscall_count;         //SAving the total number of system calls
+    int syscall_count;         //Saving the total number of system calls
 
 };
 
