@@ -105,21 +105,6 @@ sys_create_palindrome(void)
         reversed = reversed * 10 + temp % 10;
         temp /= 10;
     }
-
-    int digits = 0;
-    temp = reversed;
-    if (temp == 0) {
-        digits = 1;
-    } else {
-        while (temp != 0) {
-            temp /= 10;
-            digits++;
-        }
-    }
-    int multiplier = 1;
-    for (int i = 0; i < digits; i++)
-        multiplier *= 10;
-
     cprintf("Palindrome: %d%d\n", num,reversed);
 
     return 0;
