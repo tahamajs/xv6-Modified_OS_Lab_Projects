@@ -4,15 +4,20 @@
 #include "stat.h"
 #include "user.h"
 
-int main(void) {
-    int pid = getpid();
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf(2, "Usage: test_get_most_invoked_syscall <pid>\n");
+        exit();
+    }
+
+    int pid = atoi(argv[1]);
+    if(pid == 0 && argv[1][0] != '0'){
+        printf(2, "Usage: test_get_most_invoked_syscall <pid>\n");
+        exit();
+    }
 
     // Make some system calls
     printf(1, "Testing get_most_invoked_syscall\n");
-    for (int i = 0; i < 5; i++)
-        getpid();
-    for (int i = 0; i < 3; i++)
-        sleep(1);
 
     // Get the most invoked system call
     if (get_most_invoked_syscall(pid) < 0) {

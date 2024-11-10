@@ -59,8 +59,8 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
-      int syscalls[MAX_SYSCALLS];
-    int syscall_count;
+    int syscalls[MAX_SYSCALLS];//Save the number of each system call
+    int syscall_count;         //SAving the total number of system calls
 
 };
 

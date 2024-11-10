@@ -220,11 +220,7 @@ sys_list_all_processes(void)
     cprintf("PID    Syscall Count  Process Name\n");
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->state != UNUSED && p->state != ZOMBIE) {
-            int total_syscalls = 0;
-            for(int i = 0;i < MAX_SYSCALLS; i++){
-              total_syscalls += p->syscalls[i];
-            }
-            cprintf("%d      %d             %s\n", p->pid, total_syscalls, p->name);
+            cprintf("%d      %d            %s\n", p->pid, p->syscall_count, p->name);
         }
     }
     release(&ptable.lock);
