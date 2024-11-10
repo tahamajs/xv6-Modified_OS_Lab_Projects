@@ -148,14 +148,10 @@ sys_sort_syscalls(void)
         if (p->pid == pid) {
             // Sort the syscalls array using bubble sort
             int n = p->syscall_count;
-            for (int i = 0; i < n - 1; i++) {
-                for (int j = 0; j < n - i - 1; j++) {
-                    if (p->syscalls[j] > p->syscalls[j + 1]) {
-                        int temp = p->syscalls[j];
-                        p->syscalls[j] = p->syscalls[j + 1];
-                        p->syscalls[j + 1] = temp;
-                    }
-                }
+            for (int i = 0; i < MAX_SYSCALLS; i++) {
+              if(p->syscalls[i] != 0){
+                cprintf("System Call ID: %d    Number of Calls: %d\n", i,p->syscalls[i]);
+              }
             }
             release(&ptable.lock);
             return 0;

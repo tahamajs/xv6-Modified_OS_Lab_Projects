@@ -264,6 +264,12 @@ exit(void)
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
+  
+  //Reset System Call Statistics
+  for (int i = 0;i < MAX_SYSCALLS; i++){
+    curproc->syscalls[i] = 0;
+    curproc->syscall_count = 0;
+  }
   sched();
   panic("zombie exit");
 }
