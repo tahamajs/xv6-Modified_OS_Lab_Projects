@@ -16,7 +16,6 @@
 #include "file.h"
 #include "fcntl.h"
 #include "param.h"
-// #include "fs.h"          // Add this line
 
 #define MAXPATH 128
 
@@ -507,10 +506,6 @@ safestrcat(char *s, const char *t, int max)
     return i;
 }
 
-// sysfile.c
-// sysfile.c
-
-// Forward declarations
 int fetch_filename(const char *path, char *filename);
 int create_link(const char *old, const char *new);
 int sys_move_file(void)
@@ -522,26 +517,21 @@ int sys_move_file(void)
     if (argstr(0, &src_file) < 0 || argstr(1, &dest_dir) < 0)
         return -1;
 
-    // Extract filename from src_file path
     if (fetch_filename(src_file, filename) < 0)
         return -1;
 
-    // Construct full destination path
     safestrcpy(full_dest_path, dest_dir, MAXPATH);
     safestrcat(full_dest_path, "/", MAXPATH);
     safestrcat(full_dest_path, filename, MAXPATH);
 
     begin_op();
 
-    // Link the file to the new location
     if (create_link(src_file, full_dest_path) < 0) {
         end_op();
         return -1;
     }
 
-    // Unlink the original file
     if (namei(src_file) == 0 || unlink(src_file) < 0) {
-        // Cleanup: remove the new link
         unlink(full_dest_path);
         end_op();
         return -1;
@@ -552,55 +542,6 @@ int sys_move_file(void)
     return 0;
 }
 
-
-// // Helper function to extract filename from path
-// int fetch_filename(const char *path, char *filename)
-// {
-//     const char *s = path + strlen(path);
-//     while (s >= path && *s != '/')
-//         s--;
-//     s++;
-//     safestrcpy(filename, s, DIRSIZ);
-//     return 0;
-// }
-
-// // Helper function to create a link
-// int create_link(const char *oldpath, const char *newpath)
-// {
-//     struct inode *dp, *ip;
-//     char name[DIRSIZ];
-
-//     if ((ip = namei(oldpath)) == 0)
-//         return -1;
-
-//     ilock(ip);
-//     if (ip->type == T_DIR) {
-//         iunlockput(ip);
-//         return -1;
-//     }
-//     ip->nlink++;
-//     iupdate(ip);
-//     iunlock(ip);
-
-//     if ((dp = nameiparent(newpath, name)) == 0)
-//         goto bad;
-//     ilock(dp);
-//     if (dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0) {
-//         iunlockput(dp);
-//         goto bad;
-//     }
-//     iunlockput(dp);
-//     iput(ip);
-
-//     return 0;
-
-// bad:
-//     ilock(ip);
-//     ip->nlink--;
-//     iupdate(ip);
-//     iunlockput(ip);
-//     return -1;
-// }
 int fetch_filename(const char *path, char *filename)
 {
     char *s;

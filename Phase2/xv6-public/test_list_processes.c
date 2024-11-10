@@ -1,5 +1,3 @@
-// test_list_processes.c
-
 #include "types.h"
 #include "stat.h"
 #include "user.h"

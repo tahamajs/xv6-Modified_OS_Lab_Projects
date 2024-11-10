@@ -1,5 +1,3 @@
-// test_sort_syscalls.c
-
 #include "types.h"
 #include "stat.h"
 #include "user.h"

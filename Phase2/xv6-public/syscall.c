@@ -147,8 +147,8 @@ static int (*syscalls[])(void) = {
     [SYS_list_all_processes]       sys_list_all_processes,
 };
 
-// syscall.c
-int syscall_counts[MAX_SYSCALLS] = {0};  // Define the array with the new name
+
+int syscall_counts[MAX_SYSCALLS] = {0}; 
 
 void syscall(void) {
     int num;
@@ -161,7 +161,6 @@ void syscall(void) {
         curproc->syscall_count++;  // Increment the total number of system calls for the process
         syscall_counts[num]++;  //Increment the total number of system call usage count
     } else {
-        // Handle invalid syscall number
         curproc->tf->eax = -1;
     }
 }

@@ -94,22 +94,18 @@ int
 sys_create_palindrome(void)
 {
     int num;
-    //Fetch the first argument(user number)
     if (argint(0, &num) < 0)
         return -1;
     if(num == 0){
       cprintf("Palindrome: %d\n",num);
       return 0;
     }
-
-    // Reverse the number
     int reversed = 0, temp = num;
     while (temp != 0) {
         reversed = reversed * 10 + temp % 10;
         temp /= 10;
     }
 
-    // Calculate the number of digits in reversed
     int digits = 0;
     temp = reversed;
     if (temp == 0) {
@@ -120,14 +116,10 @@ sys_create_palindrome(void)
             digits++;
         }
     }
-
-    // Calculate multiplier
     int multiplier = 1;
     for (int i = 0; i < digits; i++)
         multiplier *= 10;
 
-
-    //Print the result in the terminal
     cprintf("Palindrome: %d%d\n", num,reversed);
 
     return 0;
@@ -146,7 +138,6 @@ sys_sort_syscalls(void)
     acquire(&ptable.lock);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->pid == pid) {
-            // Sort the syscalls array using bubble sort
             int n = p->syscall_count;
             for (int i = 0; i < MAX_SYSCALLS; i++) {
               if(p->syscalls[i] != 0){
@@ -158,9 +149,9 @@ sys_sort_syscalls(void)
         }
     }
     release(&ptable.lock);
-    return -1; // Process not found
+    return -1; 
 }
-// sysproc.c
+
 
 int
 sys_get_most_invoked_syscall(void)
@@ -179,12 +170,10 @@ sys_get_most_invoked_syscall(void)
                 release(&ptable.lock);
                 return -1;
             }
-            // Count occurrences
             int counts[NELEM(syscall_counts)] = {0};
             for (int i = 0; i < p->syscall_count; i++) {
                 counts[p->syscalls[i]]++;
             }
-            // Find the most invoked syscall
             int max_syscall = 0;
             int max_count = 0;
             for (int i = 0; i < NELEM(syscall_counts); i++) {
@@ -202,10 +191,6 @@ sys_get_most_invoked_syscall(void)
     cprintf("Process %d not found\n", pid);
     return -1;
 }
-
-
-
-// sysproc.c
 
 int
 sys_list_all_processes(void)

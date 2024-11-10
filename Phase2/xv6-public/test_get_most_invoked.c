@@ -1,5 +1,3 @@
-// test_get_most_invoked.c
-
 #include "types.h"
 #include "stat.h"
 #include "user.h"

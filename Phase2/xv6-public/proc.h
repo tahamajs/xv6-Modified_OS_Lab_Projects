@@ -14,10 +14,7 @@ struct cpu {
   struct proc *proc;           // The process running on this cpu or null
 };
 #define MAX_SYSCALLS 100
-extern int syscall_counts[MAX_SYSCALLS];  // Declare the array with the new name
-
-
-// struct proc proc_table[NPROC];  // Use a more descriptive name if possible
+extern int syscall_counts[MAX_SYSCALLS];
 
 
 extern struct cpu cpus[NCPU];

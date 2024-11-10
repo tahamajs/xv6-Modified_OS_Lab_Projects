@@ -1,5 +1,3 @@
-// test_palindrome.c
-
 #include "types.h"
 #include "stat.h"
 #include "user.h"
