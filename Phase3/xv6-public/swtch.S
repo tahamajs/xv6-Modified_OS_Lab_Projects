@@ -1,25 +1,26 @@
+#include "types.h"
+#include "defs.h"
+
 // Context switch
 // void swtch(struct context **old, struct context *new);
 
 .globl swtch
 swtch:
-    movl 4(%esp), %eax    # old context pointer in eax
-    movl 8(%esp), %edx    # new context pointer in edx
+    // Save caller's context in *old
+    movl 4(%esp), %eax       // old context pointer
+    movl %esp, (%eax)        // save stack pointer
+    movl %ebp, 4(%eax)       // save base pointer
+    movl %ebx, 8(%eax)       // save ebx
+    movl %esi, 12(%eax)      // save esi
+    movl %edi, 16(%eax)      // save edi
 
-    # Save old registers
-    pushl %ebp
-    pushl %ebx
-    pushl %esi
-    pushl %edi
+    // Load new context from *new
+    movl 8(%esp), %ebx       // new context pointer
+    movl (%ebx), %esp        // load stack pointer
+    movl 4(%ebx), %ebp       // load base pointer
+    movl 8(%ebx), %ebx       // load ebx
+    movl 12(%ebx), %esi      // load esi
+    movl 16(%ebx), %edi      // load edi
 
-    # Switch stacks
-    movl %esp, (%eax)     # save old esp
-    movl (%edx), %esp     # load new esp
-
-    # Load new registers
-    popl %edi
-    popl %esi
-    popl %ebx
-    popl %ebp
-
-    ret                   # return to new context
+    // Return to new context
+    ret

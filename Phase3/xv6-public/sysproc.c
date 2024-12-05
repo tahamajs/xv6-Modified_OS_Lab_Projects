@@ -7,7 +7,6 @@
 #include "mmu.h"
 #include "proc.h"
 
-
 // System call to set a process's scheduling queue
 int sys_set_scheduling_queue(void)
 {

@@ -126,6 +126,8 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+  init_proc_scheduling(p);
+
   return p;
 }
 
@@ -347,47 +349,66 @@ void scheduler(void)
     struct proc *p;
     struct cpu *c = mycpu();
     c->proc = 0;
-    
+    uint now;
+
     for(;;) {
         sti();
         acquire(&ptable.lock);
+        now = ticks;
 
-        // Update wait times and handle aging
+        // Handle aging
         for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
             if(p->state != RUNNABLE) 
                 continue;
-            p->stats.wait_time++;
             
-            // Aging logic
-            if(p->stats.wait_time > 1000 && p->sched_info_queue > ROUND_ROBIN) {
+            p->wait_time = now - p->sched_info_last_run;
+            if(p->wait_time > AGING_THRESHOLD && 
+               p->sched_info_queue > BJF) {
                 p->sched_info_queue--;
-                p->stats.wait_time = 0;
-                p->stats.queue_transitions++;
+                p->sched_info_last_run = now;
                 if(PROC_DEBUG)
-                    cprintf("Aging: PID %d promoted to queue %d\n", 
+                    cprintf("PID %d promoted to queue %d\n", 
                             p->pid, p->sched_info_queue);
             }
         }
 
-        // Try scheduling from each queue in priority order
+        // Try each queue in priority order
         struct proc *selected = 0;
-        if((selected = bjf()) != 0 || 
-           (selected = lcfs()) != 0 || 
-           (selected = roundrobin(c->proc)) != 0) {
-            
-            selected->stats.context_switches++;
-            selected->stats.wait_time = 0;
+        
+        // Try BJF queue first
+        if(!selected && (selected = bjf()) != 0) {
+            if(PROC_DEBUG)
+                cprintf("BJF selected PID %d\n", selected->pid);
+        }
+        
+        // Try LCFS next
+        if(!selected && (selected = lcfs()) != 0) {
+            if(PROC_DEBUG)
+                cprintf("LCFS selected PID %d\n", selected->pid);
+        }
+        
+        // Finally try Round Robin
+        if(!selected && (selected = roundrobin(c->last_proc)) != 0) {
+            if(PROC_DEBUG)
+                cprintf("RR selected PID %d\n", selected->pid);
+        }
+
+        if(selected) {
+            selected->switches++;
+            selected->sched_info_last_run = now;
             c->proc = selected;
             switchuvm(selected);
             selected->state = RUNNING;
             swtch(&c->context, selected->context);
             switchkvm();
             c->proc = 0;
+            c->last_proc = selected;
         }
 
         release(&ptable.lock);
     }
 }
+
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
 // intena because intena is a property of this
@@ -569,76 +590,75 @@ procdump(void)
 
 
 
+// Round Robin Scheduler
 struct proc* roundrobin(struct proc *last_scheduled)
 {
-    struct proc *p = last_scheduled;
-    for(;;){
+    struct proc *p = last_scheduled ? last_scheduled : ptable.proc;
+    struct proc *first_proc = p;
+
+    do {
         p++;
         if(p >= &ptable.proc[NPROC])
             p = ptable.proc;
         if(p->state == RUNNABLE && p->sched_info_queue == ROUND_ROBIN)
             return p;
-        if(p == last_scheduled)
-            return 0;
-    }
+    } while(p != first_proc);
+    
+    return 0;
 }
 
-
-// proc.c
-
+// Last-Come, First-Served Scheduler
 struct proc* lcfs(void)
 {
-    struct proc *result = 0;
-    struct proc *p;
+    struct proc *latest = 0;
+    uint latest_time = 0;
 
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if(p->state != RUNNABLE || p->sched_info_queue != LCFS)
             continue;
-        if(result == 0 || p->sched_info_arrival_time > result->sched_info_arrival_time)
-            result = p;
+        if(!latest || p->sched_info_arrival_time > latest_time) {
+            latest = p;
+            latest_time = p->sched_info_arrival_time;
+        }
     }
-    return result;
+    return latest;
 }
 
-
-// proc.c
-
+// Best Job First Scheduler
 struct proc* bjf(void)
 {
-    struct proc *selected = 0;
-    int min_estimated = 0x7fffffff; // Initialize to maximum int value
+    struct proc *best = 0;
+    int best_priority = 0x7FFFFFFF;
 
-    for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if(p->state != RUNNABLE || p->sched_info_queue != BJF)
             continue;
-        if(p->sched_info_bjf.estimated_burst_time < min_estimated){
-            min_estimated = p->sched_info_bjf.estimated_burst_time;
-            selected = p;
+            
+        int priority = calculate_bjf_priority(p);
+        if(priority < best_priority) {
+            best_priority = priority;
+            best = p;
         }
     }
-    return selected;
+    return best;
 }
-// proc.c
 
+// First-Come, First-Served Scheduler
 struct proc* fcfs(void)
 {
-    struct proc *selected = 0;
-    int earliest_arrival = 0x7fffffff;
+    struct proc *earliest = 0;
+    uint earliest_time = 0xFFFFFFFF;
 
-    for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if(p->state != RUNNABLE || p->sched_info_queue != FCFS)
             continue;
-        if(p->sched_info_arrival_time < earliest_arrival){
-            earliest_arrival = p->sched_info_arrival_time;
-            selected = p;
+        if(!earliest || p->sched_info_arrival_time < earliest_time) {
+            earliest = p;
+            earliest_time = p->sched_info_arrival_time;
         }
     }
-    return selected;
+    return earliest;
 }
-
-
-
-
 
 // proc.c
 
@@ -701,4 +721,16 @@ int print_processes_info(void)
     
     release(&ptable.lock);
     return 0;
+}
+
+void init_proc_scheduling(struct proc *p)
+{
+    p->sched_info_queue = ROUND_ROBIN;  // Start in lowest priority
+    p->sched_info_last_run = ticks;
+    p->sched_info_arrival_time = ticks;
+    p->sched_info_bjf.estimated_burst_time = MAX_BURST_TIME;
+    p->sched_info_bjf.confidence_level = 0;
+    p->wait_time = 0;
+    p->run_time = 0;
+    p->switches = 0;
 }

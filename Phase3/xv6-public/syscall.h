@@ -28,7 +28,10 @@
 #define SYS_set_scheduling_queue    27
 #define SYS_print_processes_info    28
 
-#define MAX_SYSCALLS                 100
+#define MAX_SYSCALLS                  100
+
+int sys_set_scheduling_queue(void);
+int sys_print_processes_info(void);
 
 
 

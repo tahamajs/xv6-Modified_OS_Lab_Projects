@@ -18,6 +18,8 @@ extern int sys_move_file(void);
 extern int sys_sort_syscalls(void);
 extern int sys_get_most_invoked_syscall(void);
 extern int sys_list_all_processes(void);
+extern int sys_set_scheduling_queue(void);
+extern int sys_print_processes_info(void);
 
 
 

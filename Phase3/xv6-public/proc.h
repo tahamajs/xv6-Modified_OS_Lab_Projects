@@ -14,19 +14,25 @@
 #define MIN_CONFIDENCE 0
 #define MAX_CONFIDENCE 10
 
+// Scheduling constants
+#define NUM_QUEUES 3
+#define AGING_THRESHOLD 1000
+#define MAX_BURST_TIME 1000
+
 struct bjfinfo {
     int estimated_burst_time;    // Estimated execution time
     int confidence_level;        // Confidence in the estimation
     int actual_burst_time;       // Actual execution time (for future use)
     int last_cpu_usage;         // Track actual CPU usage
     int prediction_accuracy;     // Track prediction accuracy
+    int priority_ratio;         // Added for BJF calculation
 };
 
 enum schedqueue {
-    ROUND_ROBIN,
-    LCFS,
-    BJF,
-    FCFS
+    BJF,            // Highest priority
+    LCFS,          // Medium priority
+    ROUND_ROBIN,   // Lowest priority
+    FCFS           // Default
 };
 
 #include "spinlock.h"  // Adjust the path if necessary to locate spinlock definition
@@ -102,6 +108,11 @@ struct proc {
     // Validation Fields
     int state_valid;            // State validation flag
     int last_error;             // Last error code
+
+    // Additional Scheduling Information
+    uint run_time;
+    uint wait_time;
+    uint switches;
 };
 
 // Validation functions (declare as inline)
@@ -114,6 +125,13 @@ static inline int validate_bjf_params(struct bjfinfo *bjf) {
 
 static inline int validate_proc_state(struct proc *p) {
     return (p->state >= UNUSED && p->state <= ZOMBIE);
+}
+
+// Scheduling helper functions
+static inline int calculate_bjf_priority(struct proc *p) {
+    struct bjfinfo *bjf = &p->sched_info_bjf;
+    return (bjf->estimated_burst_time * bjf->confidence_level) / 
+           (p->wait_time + 1);  // Add 1 to avoid division by zero
 }
 
 // Process memory is laid out contiguously, low addresses first:
