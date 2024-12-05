@@ -9,6 +9,8 @@
     ret
 
 SYSCALL(fork)
+SYSCALL(set_scheduling_queue)
+SYSCALL(print_processes_info)
 SYSCALL(exit)
 SYSCALL(wait)
 SYSCALL(pipe)

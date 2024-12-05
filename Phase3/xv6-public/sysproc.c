@@ -7,6 +7,27 @@
 #include "mmu.h"
 #include "proc.h"
 
+
+// System call to set a process's scheduling queue
+int sys_set_scheduling_queue(void)
+{
+    int pid;
+    int queue;
+
+    if(argint(0, &pid) < 0 || argint(1, &queue) < 0)
+        return -1;
+
+    return set_scheduling_queue(pid, queue);
+}
+
+// System call to print processes information
+int sys_print_processes_info(void)
+{
+    print_processes_info();
+    return 0;
+}
+
+
 int
 sys_fork(void)
 {

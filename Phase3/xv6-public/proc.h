@@ -1,6 +1,23 @@
 
 #pragma once
 
+
+struct bjfinfo {
+    int estimated_burst_time;    // Estimated execution time
+    int confidence_level;        // Confidence in the estimation
+    int actual_burst_time;       // Actual execution time (for future use)
+};
+
+
+
+enum schedqueue {
+    ROUND_ROBIN,
+    LCFS,
+    BJF,
+    FCFS
+};
+
+
 #include "spinlock.h"  // Adjust the path if necessary to locate spinlock definition
 // Per-CPU state
 struct cpu {
@@ -56,9 +73,17 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+
+
+  
     int syscalls[MAX_SYSCALLS];//Save the number of each system call
     int syscall_count;         //Saving the total number of system calls
 
+    // New Scheduling Fields
+    enum schedqueue sched_info_queue;    // Current scheduling queue
+    struct bjfinfo sched_info_bjf;       // BJF-specific information
+    int sched_info_last_run;             // Last run tick for aging
+    int sched_info_arrival_time;         // Arrival time in the queue
 };
 
 // Process memory is laid out contiguously, low addresses first:

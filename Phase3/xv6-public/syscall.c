@@ -116,6 +116,9 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
+extern int sys_set_scheduling_queue(void);
+extern int sys_print_processes_info(void);
+
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -139,12 +142,13 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
-
-    [SYS_create_palindrome]        sys_create_palindrome,
-    [SYS_move_file]                sys_move_file,
-    [SYS_sort_syscalls]            sys_sort_syscalls,
-    [SYS_get_most_invoked_syscall] sys_get_most_invoked_syscall,
-    [SYS_list_all_processes]       sys_list_all_processes,
+[SYS_create_palindrome]        sys_create_palindrome,
+[SYS_move_file]                sys_move_file,
+[SYS_sort_syscalls]            sys_sort_syscalls,
+[SYS_get_most_invoked_syscall] sys_get_most_invoked_syscall,
+[SYS_list_all_processes]       sys_list_all_processes,
+[SYS_set_scheduling_queue] = sys_set_scheduling_queue,
+[SYS_print_processes_info] = sys_print_processes_info,
 };
 
 
@@ -158,8 +162,8 @@ void syscall(void) {
     if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
         curproc->tf->eax = syscalls[num]();
         curproc->syscalls[num]++;  // Increment the count of the specific system call for the process
-        curproc->syscall_count++;  // Increment the total number of system calls for the process
-        syscall_counts[num]++;  //Increment the total number of system call usage count
+        curproc->syscall_count++;
+        syscall_counts[num]++;  
     } else {
         curproc->tf->eax = -1;
     }
