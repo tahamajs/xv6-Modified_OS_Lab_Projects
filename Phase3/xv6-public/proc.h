@@ -72,36 +72,36 @@ struct proc_stats {
 
 // Per-process state
 struct proc {
-  uint sz;                     // Size of process memory (bytes)
-  pde_t* pgdir;                // Page table
-  char *kstack;                // Bottom of kernel stack for this process
-  enum procstate state;        // Process state
-  int pid;                     // Process ID
-  struct proc *parent;         // Parent process
-  struct trapframe *tf;        // Trap frame for current syscall
-  struct context *context;     // swtch() here to run process
-  void *chan;                  // If non-zero, sleeping on chan
-  int killed;                  // If non-zero, have been killed
-  struct file *ofile[NOFILE];  // Open files
-  struct inode *cwd;           // Current directory
-  char name[16];               // Process name (debugging)
-  int syscalls[MAX_SYSCALLS];  // Save the number of each system call
-  int syscall_count;           // Saving the total number of system calls
+    uint sz;                     // Size of process memory (bytes)
+    pde_t* pgdir;                // Page table
+    char *kstack;                // Bottom of kernel stack for this process
+    enum procstate state;        // Process state
+    int pid;                     // Process ID
+    struct proc *parent;         // Parent process
+    struct trapframe *tf;        // Trap frame for current syscall
+    struct context *context;     // swtch() here to run process
+    void *chan;                  // If non-zero, sleeping on chan
+    int killed;                  // If non-zero, have been killed
+    struct file *ofile[NOFILE];  // Open files
+    struct inode *cwd;           // Current directory
+    char name[16];               // Process name (debugging)
+    int syscalls[MAX_SYSCALLS];  // System call counts
+    int syscall_count;           // Total number of system calls
 
-  // New Scheduling Fields
-  enum schedqueue sched_info_queue;    // Current scheduling queue
-  struct bjfinfo sched_info_bjf;       // BJF-specific information
-  int sched_info_last_run;             // Last run tick for aging
-  int sched_info_arrival_time;         // Arrival time in the queue
+    // Scheduling Fields
+    enum schedqueue sched_info_queue;    // Current scheduling queue
+    struct bjfinfo sched_info_bjf;       // BJF-specific information
+    int sched_info_last_run;             // Last run tick for aging
+    int sched_info_arrival_time;         // Arrival time in the queue
 
-  // Statistics and debugging
-  struct proc_stats stats;
-  int debug_flags;            // Process-specific debug flags
-  char debug_msg[64];         // Debug message buffer
+    // Statistics and Debugging
+    struct proc_stats stats;
+    int debug_flags;            // Process-specific debug flags
+    char debug_msg[64];         // Debug message buffer
 
-  // Validation fields
-  int state_valid;            // State validation flag
-  int last_error;             // Last error code
+    // Validation Fields
+    int state_valid;            // State validation flag
+    int last_error;             // Last error code
 };
 
 // Validation functions (declare as inline)
