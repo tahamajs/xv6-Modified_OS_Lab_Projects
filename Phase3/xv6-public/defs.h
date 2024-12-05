@@ -189,5 +189,5 @@ int copyout(pde_t*, uint, void*, uint);
 void clearpteu(pde_t *pgdir, char *uva);
 
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
-
+#define MAX_SYSCALLS 100
 extern int syscall_counts[MAX_SYSCALLS];

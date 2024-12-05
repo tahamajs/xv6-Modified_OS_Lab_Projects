@@ -21,10 +21,10 @@ extern void trapret(void);
 // Define the number of scheduling queues
 #define NUM_QUEUES 3
 
-struct {
-    struct spinlock lock;
-    struct proc proc[NPROC];
-} ptable;
+// struct {
+//     struct spinlock lock;
+//     struct proc proc[NPROC];
+// } ptable;
 
 // Function prototypes
 struct proc* roundrobin(struct proc *last_scheduled);

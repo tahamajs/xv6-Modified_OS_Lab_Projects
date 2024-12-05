@@ -1,5 +1,4 @@
-#include "types.h"
-#include "defs.h"
+
 
 // Context switch
 // void swtch(struct context **old, struct context *new);

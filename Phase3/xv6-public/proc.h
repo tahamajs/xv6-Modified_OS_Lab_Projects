@@ -36,6 +36,13 @@ enum schedqueue {
 };
 
 #include "spinlock.h"  // Adjust the path if necessary to locate spinlock definition
+struct context {
+  uint edi;
+  uint esi;
+  uint ebx;
+  uint ebp;
+  uint eip;
+};
 
 // Per-CPU state
 struct cpu {
@@ -58,13 +65,6 @@ extern struct cpu cpus[NCPU];
 extern int ncpu;
 
 // Saved registers for kernel context switches.
-struct context {
-  uint edi;
-  uint esi;
-  uint ebx;
-  uint ebp;
-  uint eip;
-};
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
