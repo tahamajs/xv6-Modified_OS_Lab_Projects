@@ -11,8 +11,7 @@
 // System call to set a process's scheduling queue
 int sys_set_scheduling_queue(void)
 {
-    int pid;
-    int queue;
+    int pid, queue;
 
     if(argint(0, &pid) < 0 || argint(1, &queue) < 0)
         return -1;
@@ -23,8 +22,7 @@ int sys_set_scheduling_queue(void)
 // System call to print processes information
 int sys_print_processes_info(void)
 {
-    print_processes_info();
-    return 0;
+    return print_processes_info();
 }
 
 

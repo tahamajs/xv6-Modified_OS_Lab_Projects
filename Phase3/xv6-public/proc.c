@@ -334,7 +334,7 @@ wait(void)
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
-// Scheduler never returns.  It loops, doing:
+// Scheduler never returns. It loops, doing:
 //  - choose a process to run
 //  - swtch to start running that process
 //  - eventually that process transfers control
@@ -347,47 +347,42 @@ void scheduler(void)
     struct proc *p;
     struct cpu *c = mycpu();
     c->proc = 0;
-
-    for(;;){
+    
+    for(;;) {
         sti();
         acquire(&ptable.lock);
 
-        // Aging: Promote processes that have waited too long
-        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-            if(p->state != RUNNABLE)
+        // Update wait times and handle aging
+        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if(p->state != RUNNABLE) 
                 continue;
-            p->sched_info_last_run++;
-            if(p->sched_info_last_run > 800 && p->sched_info_queue > ROUND_ROBIN){
+            p->stats.wait_time++;
+            
+            // Aging logic
+            if(p->stats.wait_time > 1000 && p->sched_info_queue > ROUND_ROBIN) {
                 p->sched_info_queue--;
-                p->sched_info_last_run = 0;
-                cprintf("Aging: Promoted process %s (PID %d) to queue %d\n", p->name, p->pid, p->sched_info_queue);
+                p->stats.wait_time = 0;
+                p->stats.queue_transitions++;
+                if(PROC_DEBUG)
+                    cprintf("Aging: PID %d promoted to queue %d\n", 
+                            p->pid, p->sched_info_queue);
             }
         }
 
-        // Iterate through scheduling queues in priority order
-        for(int q = 0; q < NUM_QUEUES; q++){
-            struct proc *selected = 0;
-            switch(q){
-                case 0:
-                    selected = bjf();
-                    break;
-                case 1:
-                    selected = lcfs();
-                    break;
-                case 2:
-                    selected = roundrobin(c->last_proc);
-                    break;
-            }
-
-            if(selected){
-                // Switch to chosen process
-                c->proc = selected;
-                selected->state = RUNNING;
-                selected->sched_info_last_run = 0; // Reset aging counter
-                swtch(&c->context, selected->context);
-                // Process is done running for now.
-                c->proc = 0;
-            }
+        // Try scheduling from each queue in priority order
+        struct proc *selected = 0;
+        if((selected = bjf()) != 0 || 
+           (selected = lcfs()) != 0 || 
+           (selected = roundrobin(c->proc)) != 0) {
+            
+            selected->stats.context_switches++;
+            selected->stats.wait_time = 0;
+            c->proc = selected;
+            switchuvm(selected);
+            selected->state = RUNNING;
+            swtch(&c->context, selected->context);
+            switchkvm();
+            c->proc = 0;
         }
 
         release(&ptable.lock);
@@ -650,52 +645,60 @@ struct proc* fcfs(void)
 int set_scheduling_queue(int pid, int queue)
 {
     struct proc *p;
+    int found = 0;
+
+    if(queue < ROUND_ROBIN || queue > FCFS)
+        return -1;  // Invalid queue
 
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-        if(p->pid == pid){
-            if(queue < ROUND_ROBIN || queue > FCFS){
-                release(&ptable.lock);
-                return -1; // Invalid queue
-            }
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if(p->pid == pid) {
+            found = 1;
             p->sched_info_queue = queue;
-            p->sched_info_last_run = 0; // Reset aging counter
-            cprintf("Process %s (PID %d) moved to queue %d\n", p->name, p->pid, queue);
-            release(&ptable.lock);
-            return 0;
+            p->sched_info_last_run = 0;
+            p->stats.queue_transitions++;
+            if(PROC_DEBUG)
+                cprintf("Process %d moved to queue %d\n", pid, queue);
+            break;
         }
     }
     release(&ptable.lock);
-    return -1; // PID not found
+    
+    return found ? 0 : -1;
 }
 
-void print_processes_info(void)
+int print_processes_info(void)
 {
     static char *states[] = {
         [UNUSED]    "unused",
         [EMBRYO]    "embryo",
-        [SLEEPING]  "sleeping",
-        [RUNNABLE]  "runnable",
-        [RUNNING]   "running",
+        [SLEEPING]  "sleep ",
+        [RUNNABLE]  "runble",
+        [RUNNING]   "run   ",
         [ZOMBIE]    "zombie"
     };
+    
     struct proc *p;
-
-    cprintf("PID\tName\tState\tQueue\tEstimatedBT\tConfidence\tArrivalTime\tLastRun\n");
-    cprintf("-------------------------------------------------------------------------------\n");
-
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    acquire(&ptable.lock);
+    
+    cprintf("\n=== Process Information ===\n");
+    cprintf("PID  STATE     QUEUE  BT   CONF  WAIT  TRANS\n");
+    cprintf("----------------------------------------\n");
+    
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if(p->state == UNUSED)
             continue;
-        const char *state = (p->state >= 0 && p->state < NELEM(states) && states[p->state]) ? states[p->state] : "???";
-        cprintf("%d\t%s\t%s\t%d\t%d\t\t%d\t\t%d\t\t%d\n",
-            p->pid,
-            p->name,
-            state,
-            p->sched_info_queue,
-            p->sched_info_bjf.estimated_burst_time,
-            p->sched_info_bjf.confidence_level,
-            p->sched_info_arrival_time,
-            p->sched_info_last_run);
+        cprintf("%d    %s    %d     %d    %d     %d     %d\n",
+                p->pid,
+                states[p->state],
+                p->sched_info_queue,
+                p->sched_info_bjf.estimated_burst_time,
+                p->sched_info_bjf.confidence_level,
+                p->stats.wait_time,
+                p->stats.queue_transitions);
     }
+    cprintf("----------------------------------------\n");
+    
+    release(&ptable.lock);
+    return 0;
 }

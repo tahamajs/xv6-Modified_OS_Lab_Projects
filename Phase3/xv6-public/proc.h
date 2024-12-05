@@ -1,14 +1,26 @@
-
 #pragma once
 
+// Debug macros
+#define PROC_DEBUG 1
+#ifdef PROC_DEBUG
+#define PDEBUG(fmt, ...) cprintf(fmt, ##__VA_ARGS__)
+#else
+#define PDEBUG(fmt, ...)
+#endif
+
+// BJF validation macros
+#define MIN_BURST_TIME 0
+#define MAX_BURST_TIME 1000
+#define MIN_CONFIDENCE 0
+#define MAX_CONFIDENCE 10
 
 struct bjfinfo {
     int estimated_burst_time;    // Estimated execution time
     int confidence_level;        // Confidence in the estimation
     int actual_burst_time;       // Actual execution time (for future use)
+    int last_cpu_usage;         // Track actual CPU usage
+    int prediction_accuracy;     // Track prediction accuracy
 };
-
-
 
 enum schedqueue {
     ROUND_ROBIN,
@@ -17,8 +29,8 @@ enum schedqueue {
     FCFS
 };
 
-
 #include "spinlock.h"  // Adjust the path if necessary to locate spinlock definition
+
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -29,25 +41,17 @@ struct cpu {
   int ncli;                    // Depth of pushcli nesting.
   int intena;                  // Were interrupts enabled before pushcli?
   struct proc *proc;           // The process running on this cpu or null
+  struct proc *last_proc;      // Last scheduled process
+  struct context context;      // Context for scheduler switches 
 };
+
 #define MAX_SYSCALLS 100
 extern int syscall_counts[MAX_SYSCALLS];
-
 
 extern struct cpu cpus[NCPU];
 extern int ncpu;
 
-//PAGEBREAK: 17
 // Saved registers for kernel context switches.
-// Don't need to save all the segment registers (%cs, etc),
-// because they are constant across kernel contexts.
-// Don't need to save %eax, %ecx, %edx, because the
-// x86 convention is that the caller has saved them.
-// Contexts are stored at the bottom of the stack they
-// describe; the stack pointer is the address of the context.
-// The layout of the context matches the layout of the stack in swtch.S
-// at the "Switch stacks" comment. Switch doesn't save eip explicitly,
-// but it is on the stack and allocproc() manipulates it.
 struct context {
   uint edi;
   uint esi;
@@ -57,6 +61,14 @@ struct context {
 };
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+
+// Process statistics
+struct proc_stats {
+    uint total_run_time;        // Total time process has run
+    uint wait_time;             // Time spent waiting
+    uint context_switches;      // Number of context switches
+    uint queue_transitions;     // Number of queue changes
+};
 
 // Per-process state
 struct proc {
@@ -73,29 +85,57 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  int syscalls[MAX_SYSCALLS];  // Save the number of each system call
+  int syscall_count;           // Saving the total number of system calls
 
+  // New Scheduling Fields
+  enum schedqueue sched_info_queue;    // Current scheduling queue
+  struct bjfinfo sched_info_bjf;       // BJF-specific information
+  int sched_info_last_run;             // Last run tick for aging
+  int sched_info_arrival_time;         // Arrival time in the queue
 
-  
-    int syscalls[MAX_SYSCALLS];//Save the number of each system call
-    int syscall_count;         //Saving the total number of system calls
+  // Statistics and debugging
+  struct proc_stats stats;
+  int debug_flags;            // Process-specific debug flags
+  char debug_msg[64];         // Debug message buffer
 
-    // New Scheduling Fields
-    enum schedqueue sched_info_queue;    // Current scheduling queue
-    struct bjfinfo sched_info_bjf;       // BJF-specific information
-    int sched_info_last_run;             // Last run tick for aging
-    int sched_info_arrival_time;         // Arrival time in the queue
+  // Validation fields
+  int state_valid;            // State validation flag
+  int last_error;             // Last error code
 };
+
+// Validation functions (declare as inline)
+static inline int validate_bjf_params(struct bjfinfo *bjf) {
+    return (bjf->estimated_burst_time >= MIN_BURST_TIME && 
+            bjf->estimated_burst_time <= MAX_BURST_TIME &&
+            bjf->confidence_level >= MIN_CONFIDENCE &&
+            bjf->confidence_level <= MAX_CONFIDENCE);
+}
+
+static inline int validate_proc_state(struct proc *p) {
+    return (p->state >= UNUSED && p->state <= ZOMBIE);
+}
 
 // Process memory is laid out contiguously, low addresses first:
 //   text
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
- struct ptable {
-    struct spinlock lock;
-    struct proc proc[NPROC];
+struct ptable {
+  struct spinlock lock;
+  struct proc proc[NPROC];
 };
+
+// Process table statistics
+struct ptable_stats {
+    int total_processes;
+    int running_processes;
+    int ready_processes;
+    int blocked_processes;
+};
+
 extern struct ptable ptable;
+extern struct ptable_stats ptable_stats;
 
 
 
