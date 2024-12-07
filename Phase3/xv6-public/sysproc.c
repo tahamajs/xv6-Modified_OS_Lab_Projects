@@ -6,6 +6,8 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "spinlock.h"
+
 
 // System call to set a process's scheduling queue
 int sys_set_scheduling_queue(void)
@@ -15,13 +17,41 @@ int sys_set_scheduling_queue(void)
     if(argint(0, &pid) < 0 || argint(1, &queue) < 0)
         return -1;
 
-    return set_scheduling_queue(pid, queue);
+    return change_queue(pid, queue);
 }
 
-// System call to print processes information
-int sys_print_processes_info(void)
-{
-    return print_processes_info();
+int sys_chqueue(void) {
+    int pid, queue;
+    if (argint(0, &pid) < 0 || argint(1, &queue) < 0)
+        return -1;
+
+    return change_queue(pid, queue);
+}
+int sys_bjsproc(void) {
+    int pid;
+    float priority_ratio, arrival_time_ratio, executed_cycle_ratio, process_size_ratio;
+    if (argint(0, &pid) < 0 ||
+        argfloat(1, &priority_ratio) < 0 ||
+        argfloat(2, &arrival_time_ratio) < 0 ||
+        argfloat(3, &executed_cycle_ratio) < 0 ||
+        argfloat(4, &process_size_ratio) < 0) return -1;
+
+    return set_bjs_proc(pid, priority_ratio, arrival_time_ratio, executed_cycle_ratio, process_size_ratio);
+}
+
+int sys_bjssys(void) {
+    float priority_ratio, arrival_time_ratio, executed_cycle_ratio, process_size_ratio;
+    if (argfloat(0, &priority_ratio) < 0 ||
+        argfloat(1, &arrival_time_ratio) < 0 ||
+        argfloat(2, &executed_cycle_ratio) < 0 ||
+        argfloat(3, &process_size_ratio) < 0) return -1;
+
+    return set_bjs_sys(priority_ratio, arrival_time_ratio, executed_cycle_ratio, process_size_ratio);
+}
+
+
+int sys_procinfo(void) {
+    return print_processes_infos();
 }
 
 
@@ -132,82 +162,19 @@ sys_create_palindrome(void)
 int
 sys_sort_syscalls(void)
 {
-    int pid;
-    struct proc *p;
-
-    if (argint(0, &pid) < 0)
-        return -1;
-
-    acquire(&ptable.lock);
-    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->pid == pid) {
-            int n = p->syscall_count;
-            for (int i = 0; i < MAX_SYSCALLS; i++) {
-              if(p->syscalls[i] != 0){
-                cprintf("System Call ID: %d    Number of Calls: %d\n", i,p->syscalls[i]);
-              }
-            }
-            release(&ptable.lock);
-            return 0;
-        }
-    }
-    release(&ptable.lock);
-    return -1; 
+  sort_syscalls();
 }
 
 
 int
 sys_get_most_invoked_syscall(void)
 {
-    int pid;
-    struct proc *p;
+  return get_most_invoked();
 
-    if (argint(0, &pid) < 0)
-        return -1;
-
-    acquire(&ptable.lock);
-    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->pid == pid) {
-            if (p->syscall_count == 0) {
-                cprintf("No system calls invoked by process %d\n", pid);
-                release(&ptable.lock);
-                return -1;
-            }
-            int counts[NELEM(syscall_counts)] = {0};
-            for (int i = 0; i < p->syscall_count; i++) {
-                counts[p->syscalls[i]]++;
-            }
-            int max_syscall = 0;
-            int max_count = 0;
-            for (int i = 0; i < NELEM(syscall_counts); i++) {
-                if (counts[i] > max_count) {
-                    max_syscall = i;
-                    max_count = counts[i];
-                }
-            }
-            cprintf("Most invoked system call: %d, invoked %d times\n", max_syscall, max_count);
-            release(&ptable.lock);
-            return 0;
-        }
-    }
-    release(&ptable.lock);
-    cprintf("Process %d not found\n", pid);
-    return -1;
 }
 
 int
 sys_list_all_processes(void)
 {
-    struct proc *p;
-
-    acquire(&ptable.lock);
-    cprintf("PID    Syscall Count  Process Name\n");
-    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->state != UNUSED && p->state != ZOMBIE) {
-            cprintf("%d      %d            %s\n", p->pid, p->syscall_count, p->name);
-        }
-    }
-    release(&ptable.lock);
-
-    return 0;
+    list_proceases();
 }

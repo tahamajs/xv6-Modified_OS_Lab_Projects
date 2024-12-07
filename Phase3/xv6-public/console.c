@@ -214,6 +214,9 @@ struct {
     uint cursor_shift; // Number of positions the cursor has been shifted to the left (>= 0)
 } input_buffer;
 
+
+
+
 // Write string to console and input buffer
 void console_put_string(char* s) {
     for (int i = 0; i < INPUT_BUFFER_SIZE && s[i]; ++i) {
@@ -537,6 +540,7 @@ static int evaluate_expression_from_end(int end_idx, int* result) {
 
 // Process input buffer and replace 'N O N=?' patterns with result
 static void process_input_buffer(void) {
+    // cprintf("esrg");
     int i = input_buffer.edit_index - 1; // Start from the end of the input buffer
     int write_idx = input_buffer.write_index;
     while (i >= write_idx) {
@@ -612,12 +616,88 @@ static void process_input_buffer(void) {
     }
 }
 
+#define INPUT_BUF 128
+
+// buffer (history) of entered commands
+#define COMMAND_BUF 10
+struct {
+    char buf[COMMAND_BUF][INPUT_BUF]; // buffer
+    int r;                            // range[1,10], read index
+    int w;                            // write index
+    int intab;                        // whether we are in tab mode
+    char tmpcmd[INPUT_BUF];           // temporary command
+    int lastusedidx;                  // index of last used command
+} cmds;
+// sets cursor position
+// Cursor position: col + 80*row.
+// load and store cmd
+static void
+storecmd(void) {
+    for (int i = cmds.w - 1; i > 0; i--)
+        for (int j = 0; j < INPUT_BUF; j++)
+            cmds.buf[i][j] = cmds.buf[i - 1][j];
+
+    int j = 0;
+    for (int i = input_buffer.write_index; i < input_buffer.edit_index; i++) {
+        cmds.buf[0][j] = input_buffer.buffer[i];
+        j++;
+    }
+    for (; j < INPUT_BUF; j++) {
+        cmds.buf[0][j] = 0;
+    }
+}
+static int
+getpos(void) {
+    int pos;
+    outb(CRTPORT, 14);
+    pos = inb(CRTPORT + 1) << 8;
+    outb(CRTPORT, 15);
+    pos |= inb(CRTPORT + 1);
+    return pos;
+}
+
+// sets cursor position
+static void
+setpos(int pos) {
+    outb(CRTPORT, 14);
+    outb(CRTPORT + 1, pos >> 8);
+    outb(CRTPORT, 15);
+    outb(CRTPORT + 1, pos);
+}
+// functions to move cursor more easily
+static void
+movpostoend(void) {
+    setpos(getpos() + input_buffer.cursor_shift);
+}
+
+
+static void
+resetcmds(void) {
+    cmds.intab = 0;
+    cmds.tmpcmd[0] = '\0';
+    cmds.lastusedidx = 0;
+    cmds.w = ((cmds.w + 1) > COMMAND_BUF ? COMMAND_BUF : (cmds.w + 1));
+    storecmd();
+    cmds.r = 0;
+    movpostoend();
+}
+
+
+
+// print shell prompt
+static void
+consnewcommand(void) {
+    conswritechar(0, '$');
+    setpos(2);
+}
 // Console interrupt handler
 void consoleintr(int (*getc)(void)) {
     int c, doprocdump = 0;
 
     acquire(&console_lock_state.lock);
     while ((c = getc()) >= 0) {
+        // cprintf(";;");
+        // console_put_string("klkkl");
         switch (c) {
             case CTRL('P'): // Process listing.
                 doprocdump = 1;
@@ -724,15 +804,25 @@ void consoleintr(int (*getc)(void)) {
                     if (c == '\n' && input_buffer.edit_index - input_buffer.write_index > 0) {
                         reset_command_history();
                         input_buffer.cursor_shift = 0;
+                        // console_put_string("sefres esgr");
                     }
                     input_put_character(c);
 
                     if (c == '\n' || c == CTRL('D') || input_buffer.edit_index == input_buffer.read_index + INPUT_BUFFER_SIZE) {
+                        // console_put_string("enter");
                         int cmd_len = input_buffer.edit_index - input_buffer.write_index;
                         char cmd[INPUT_BUFFER_SIZE];
                         for (int i = 0; i < cmd_len; i++) {
                             cmd[i] = input_buffer.buffer[(input_buffer.write_index + i) % INPUT_BUFFER_SIZE];
                         }
+
+                        if (c == '\n' && input_buffer.edit_index - input_buffer.write_index > 0) {
+                            resetcmds();
+                            input_buffer.cursor_shift = 0;
+                        }
+
+
+
 
                         cmd[cmd_len - 1] = '\0';
 
@@ -746,8 +836,10 @@ void consoleintr(int (*getc)(void)) {
                             break;
                         }
 
-                        input_buffer.write_index = input_buffer.edit_index;
-                        wakeup(&input_buffer.read_index);
+                if (c == '\n' || c == CTRL('D') || input_buffer.edit_index == input_buffer.read_index + INPUT_BUF ) {
+                    input_buffer.write_index = input_buffer.edit_index;
+                    wakeup(&input_buffer.read_index);
+                }
                     }
                 }
                 break;

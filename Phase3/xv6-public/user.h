@@ -45,6 +45,12 @@ int sort_syscalls(int pid);
 int get_most_invoked_syscall(int pid);
 int list_all_processes(void);
 
+int chqueue(int, int);
+int bjsproc(int, float, float, float, float);
+int bjssys(float, float, float, float);
+int procinfo(void);
+
+
 
 int set_scheduling_queue(int pid, int queue);
 int print_processes_info(void);

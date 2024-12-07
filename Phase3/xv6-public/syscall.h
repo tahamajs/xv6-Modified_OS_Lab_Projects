@@ -28,10 +28,14 @@
 #define SYS_set_scheduling_queue    27
 #define SYS_print_processes_info    28
 
+#define SYS_chqueue    29
+#define SYS_bjsproc    30
+#define SYS_bjssys     31
+
 #define MAX_SYSCALLS                  100
 
-int sys_set_scheduling_queue(void);
-int sys_print_processes_info(void);
+// int sys_set_scheduling_queue(void);
+// int sys_print_processes_info(void);
 
 
 

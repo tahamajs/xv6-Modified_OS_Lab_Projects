@@ -7,6 +7,7 @@
 #include "x86.h"
 #include "syscall.h"
 // int syscalls[MAX_SYSCALLS] = {0};  // Initialize with default values if needed
+// struct nsyslock nsys;
 
 
 // syscall.c
@@ -20,6 +21,7 @@ extern int sys_get_most_invoked_syscall(void);
 extern int sys_list_all_processes(void);
 extern int sys_set_scheduling_queue(void);
 extern int sys_print_processes_info(void);
+
 
 
 
@@ -113,7 +115,10 @@ extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_set_scheduling_queue(void);
-extern int sys_print_processes_info(void);
+extern int sys_procinfo(void);
+extern int sys_chqueue(void);
+extern int sys_bjsproc(void);
+extern int sys_bjssys(void);
 
 
 static int (*syscalls[])(void) = {
@@ -144,23 +149,47 @@ static int (*syscalls[])(void) = {
     [SYS_get_most_invoked_syscall] sys_get_most_invoked_syscall,
     [SYS_list_all_processes]      sys_list_all_processes,
     [SYS_set_scheduling_queue]    sys_set_scheduling_queue,
-    [SYS_print_processes_info]    sys_print_processes_info,
+    [SYS_print_processes_info]    sys_procinfo,
+    [SYS_chqueue]    sys_chqueue,
+    [SYS_bjsproc]    sys_bjsproc,
+    [SYS_bjssys]     sys_bjssys,
 };
 
 
-int syscall_counts[MAX_SYSCALLS] = {0}; 
+// Fetch the float at addr from the current process.
+int fetchfloat(uint addr, float* fp) {
+    struct proc* curproc = myproc();
 
+    if (addr >= curproc->sz || addr + 4 > curproc->sz)
+        return -1;
+    *fp = *(float*)(addr);
+    return 0;
+}
+
+int argfloat(int n, float* fp) {
+    return fetchfloat((myproc()->tf->esp) + 4 + 4 * n, fp);
+}
+
+int syscall_counts[MAX_SYSCALLS] = {0}; 
 void syscall(void) {
     int num;
-    struct proc *curproc = myproc();
+    struct proc* curproc = myproc();
 
     num = curproc->tf->eax;
     if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
         curproc->tf->eax = syscalls[num]();
-        curproc->syscalls[num]++;  // Increment the count of the specific system call for the process
-        curproc->syscall_count++;
-        syscall_counts[num]++;  
-    } else {
+    }
+    else {
+        cprintf("%d %s: unknown sys call %d\n",
+                curproc->pid, curproc->name, num);
         curproc->tf->eax = -1;
     }
+    cli();
+    int CPUid = cpuid();
+    sti();
+    cpus[CPUid].nsyscall++;
+    // acquire(&nsys.lk);
+    // nsys.n++;
+    // release(&nsys.lk);
 }
+

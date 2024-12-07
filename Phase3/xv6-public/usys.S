@@ -31,6 +31,9 @@ SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
+SYSCALL(chqueue)
+SYSCALL(bjsproc)
+SYSCALL(bjssys)
 
 
 SYSCALL(create_palindrome)

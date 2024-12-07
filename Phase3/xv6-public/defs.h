@@ -171,6 +171,7 @@ extern struct spinlock tickslock;
 void uartinit(void);
 void uartintr(void);
 void uartputc(int);
+int init_queue(int);
 
 // vm.c
 void seginit(void);
