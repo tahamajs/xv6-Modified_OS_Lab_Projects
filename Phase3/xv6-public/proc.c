@@ -350,7 +350,7 @@ int init_queue(int pid) {
     if (pid == 1 || pid == 2)
         queue = ROUND_ROBIN;
     else if (pid > 2)
-        queue = ROUND_ROBIN;
+        queue = FCFS;
     else
         return -1;
 
