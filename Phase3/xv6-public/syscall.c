@@ -6,9 +6,72 @@
 #include "proc.h"
 #include "x86.h"
 #include "syscall.h"
+#include "mp.h"
 // int syscalls[MAX_SYSCALLS] = {0};  // Initialize with default values if needed
 // struct nsyslock nsys;
+struct nsyslock nsys;
 
+// Fetch the int at addr from the current process.
+int fetchint(uint addr, int* ip) {
+    struct proc* curproc = myproc();
+
+    if (addr >= curproc->sz || addr + 4 > curproc->sz)
+        return -1;
+    *ip = *(int*)(addr);
+    return 0;
+}
+
+// Fetch the float at addr from the current process.
+int fetchfloat(uint addr, float* fp) {
+    struct proc* curproc = myproc();
+
+    if (addr >= curproc->sz || addr + 4 > curproc->sz)
+        return -1;
+    *fp = *(float*)(addr);
+    return 0;
+}
+
+// Fetch the nul-terminated string at addr from the current process.
+// Doesn't actually copy the string - just sets *pp to point at it.
+// Returns length of string, not including nul.
+int fetchstr(uint addr, char** pp) {
+    char *s, *ep;
+    struct proc* curproc = myproc();
+
+    if (addr >= curproc->sz)
+        return -1;
+    *pp = (char*)addr;
+    ep = (char*)curproc->sz;
+    for (s = *pp; s < ep; s++) {
+        if (*s == 0)
+            return s - *pp;
+    }
+    return -1;
+}
+
+// Fetch the nth 32-bit system call argument.
+int argint(int n, int* ip) {
+    return fetchint((myproc()->tf->esp) + 4 + 4 * n, ip);
+}
+
+// Fetch the nth 32-bit system call argument in float.
+int argfloat(int n, float* fp) {
+    return fetchfloat((myproc()->tf->esp) + 4 + 4 * n, fp);
+}
+// Fetch the nth word-sized system call argument as a pointer
+// to a block of memory of size bytes.  Check that the pointer
+// lies within the process address space.
+int argptr(int n, char** pp, int size) {
+    int i;
+    struct proc* curproc = myproc();
+
+    if (argint(n, &i) < 0)
+        return -1;
+    if (size < 0 || (uint)i >= curproc->sz || (uint)i + size > curproc->sz)
+        return -1;
+    *pp = (char*)i;
+    return 0;
+}
 
 // syscall.c
 
@@ -25,73 +88,26 @@ extern int sys_print_processes_info(void);
 
 
 
-int
-fetchint(uint addr, int *ip)
-{
-  struct proc *curproc = myproc();
-
-  if(addr >= curproc->sz || addr+4 > curproc->sz)
-    return -1;
-  *ip = *(int*)(addr);
-  return 0;
-}
 
 // Fetch the nul-terminated string at addr from the current process.
 // Doesn't actually copy the string - just sets *pp to point at it.
-// Returns length of string, not including nul.
-int
-fetchstr(uint addr, char **pp)
-{
-  char *s, *ep;
-  struct proc *curproc = myproc();
-
-  if(addr >= curproc->sz)
-    return -1;
-  *pp = (char*)addr;
-  ep = (char*)curproc->sz;
-  for(s = *pp; s < ep; s++){
-    if(*s == 0)
-      return s - *pp;
-  }
-  return -1;
-}
-
-// Fetch the nth 32-bit system call argument.
-int
-argint(int n, int *ip)
-{
-  return fetchint((myproc()->tf->esp) + 4 + 4*n, ip);
-}
-
+// Returns length of string, not i
 // Fetch the nth word-sized system call argument as a pointer
 // to a block of memory of size bytes.  Check that the pointer
 // lies within the process address space.
-int
-argptr(int n, char **pp, int size)
-{
-  int i;
-  struct proc *curproc = myproc();
- 
-  if(argint(n, &i) < 0)
-    return -1;
-  if(size < 0 || (uint)i >= curproc->sz || (uint)i+size > curproc->sz)
-    return -1;
-  *pp = (char*)i;
-  return 0;
-}
+
 
 // Fetch the nth word-sized system call argument as a string pointer.
 // Check that the pointer is valid and the string is nul-terminated.
 // (There is no shared writable memory, so the string can't change
 // between this check and being used by the kernel.)
-int
-argstr(int n, char **pp)
-{
-  int addr;
-  if(argint(n, &addr) < 0)
-    return -1;
-  return fetchstr(addr, pp);
+int argstr(int n, char** pp) {
+    int addr;
+    if (argint(n, &addr) < 0)
+        return -1;
+    return fetchstr(addr, pp);
 }
+
 
 extern int sys_chdir(void);
 extern int sys_close(void);
@@ -156,20 +172,6 @@ static int (*syscalls[])(void) = {
 };
 
 
-// Fetch the float at addr from the current process.
-int fetchfloat(uint addr, float* fp) {
-    struct proc* curproc = myproc();
-
-    if (addr >= curproc->sz || addr + 4 > curproc->sz)
-        return -1;
-    *fp = *(float*)(addr);
-    return 0;
-}
-
-int argfloat(int n, float* fp) {
-    return fetchfloat((myproc()->tf->esp) + 4 + 4 * n, fp);
-}
-
 int syscall_counts[MAX_SYSCALLS] = {0}; 
 void syscall(void) {
     int num;
@@ -193,3 +195,14 @@ void syscall(void) {
     // release(&nsys.lk);
 }
 
+void getnsyscall(void) {
+    cprintf("%d, %d, %d, %d, ",
+            cpus[0].nsyscall,
+            cpus[1].nsyscall,
+            cpus[2].nsyscall,
+            cpus[3].nsyscall);
+    acquire(&nsys.lk);
+    cprintf("%d\n",
+            nsys.n);
+    release(&nsys.lk);
+}

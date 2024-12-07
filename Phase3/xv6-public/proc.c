@@ -25,7 +25,7 @@ static void wakeup1(void* chan);
 
 void pinit(void) {
     initlock(&ptable.lock, "ptable");
-    // initprioritylock(&plock, "plock");
+    initprioritylock(&plock, "plock");
 }
 
 // Must be called with interrupts disabled
@@ -131,7 +131,6 @@ found:
 void userinit(void) {
     struct proc* p;
     extern char _binary_initcode_start[], _binary_initcode_size[];
-    // cprintf("Llll");
 
     p = allocproc();
 
@@ -152,9 +151,6 @@ void userinit(void) {
     safestrcpy(p->name, "initcode", sizeof(p->name));
     p->cwd = namei("/");
 
-    // cprintf("l.kklklkl");
-
-
     // this assignment to p->state lets other cores
     // run this process. the acquire forces the above
     // writes to be visible, and the lock is also needed
@@ -162,7 +158,6 @@ void userinit(void) {
     acquire(&ptable.lock);
 
     p->state = RUNNABLE;
-
 
     release(&ptable.lock);
 
@@ -253,9 +248,9 @@ void exit(void) {
     struct proc* p;
     int fd;
 
-    // //
-    // if (isholdingpriority(&plock))
-    //     releasepriority(&plock);
+    //
+    if (isholdingpriority(&plock))
+        releasepriority(&plock);
 
     if (curproc == initproc)
         panic("init exiting");
@@ -293,8 +288,6 @@ void exit(void) {
     panic("zombie exit");
 }
 
-// Wait for a child process to exit and return its pid.
-// Return -1 if this process has no children.
 int wait(void) {
     struct proc* p;
     int havekids, pid;
@@ -334,20 +327,19 @@ int wait(void) {
         sleep(curproc, &ptable.lock); // DOC: wait-sleep
     }
 }
-
 void aging(int curr_time) {
     struct proc* p;
 
-    acquire(&ptable.lock);
 
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->state == RUNNABLE && p->sched.queue != ROUND_ROBIN) {
-            if (curr_time - p->sched.last_exec > MAX_AGE)
+            if (curr_time - p->sched.last_exec > MAX_AGE) {
+                cprintf("Process %d promoted to ROUND_ROBIN due to aging\n", p->pid);
                 change_queue(p->pid, ROUND_ROBIN);
+            }
         }
     }
 
-    release(&ptable.lock);
 }
 
 int init_queue(int pid) {
@@ -361,8 +353,6 @@ int init_queue(int pid) {
         queue = ROUND_ROBIN;
     else
         return -1;
-    
-    cprintf("shell");
 
     acquire(&ptable.lock);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
@@ -381,6 +371,7 @@ int change_queue(int pid, int new_queue) {
     if (new_queue == UNSET) {
         return -1;
     }
+    // cprintf("Process %d moved to queue %d\n", pid, new_queue);
 
     int is_process_exist = 0;
     acquire(&ptable.lock);
@@ -388,6 +379,7 @@ int change_queue(int pid, int new_queue) {
         if (p->pid == pid) {
             is_process_exist = 1;
             p->sched.queue = new_queue;
+            // cprintf("Process %d moved to queue %d\n", pid, new_queue);
             acquire(&tickslock);
             p->sched.last_exec = ticks;
             release(&tickslock);
@@ -451,12 +443,6 @@ int digitcount(int num) {
         count++;
     }
     return count;
-}
-float procrank(struct bjfparams params) {
-    return (params.priority * params.priority_ratio +
-            params.arrival_time * params.arrival_time_ratio +
-            params.executed_cycle * params.executed_cycle_ratio +
-            params.process_size * params.process_size_ratio);
 }
 int print_processes_infos(void) {
     static char* states[] = {
@@ -526,6 +512,23 @@ int print_processes_infos(void) {
     return 0;
 }
 
+struct proc* first_come_first_serve(void)
+{
+    struct proc *selected = 0;
+    int earliest_arrival = 0x7fffffff;
+
+    for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state != RUNNABLE || p->sched.queue != FCFS)
+            continue;
+        if (p->sched.bjf.arrival_time < earliest_arrival) {
+            earliest_arrival = p->sched.bjf.arrival_time;
+            selected = p;
+        }
+    }
+    return selected;
+}
+
+
 struct proc* round_robin(struct proc* last_scheduled) {
     struct proc* p = last_scheduled + 1;
     for (;; p++) {
@@ -543,6 +546,12 @@ struct proc* round_robin(struct proc* last_scheduled) {
     }
 }
 
+float procrank(struct bjfparams params) {
+    return (params.priority * params.priority_ratio +
+            params.arrival_time * params.arrival_time_ratio +
+            params.executed_cycle * params.executed_cycle_ratio +
+            params.process_size * params.process_size_ratio);
+}
 
 struct proc* best_job_first(void) {
     struct proc* next_p = 0;
@@ -579,6 +588,7 @@ struct proc* last_come_first_serve(void) {
 
     return next_p;
 }
+
 // PAGEBREAK: 42
 //  Per-CPU process scheduler.
 //  Each CPU calls scheduler() after setting itself up.
@@ -595,43 +605,41 @@ void scheduler(void) {
     struct proc* last_scheduled = ptable.proc + NPROC - 1;
 
     for (;;) {
-      // cprintf("klk");
-        // Enable interrupts on this processor.
-        sti();
+        sti(); // Enable interrupts on this processor.
 
-        // Loop over process table looking for process to run.
         acquire(&ptable.lock);
+
+
+        // Call aging function to promote processes
+        aging(ticks);
 
         p = round_robin(last_scheduled);
         last_scheduled = (p != 0) ? p : last_scheduled;
         if (p == 0)
-        if (p == 0)
             p = best_job_first();
-            p = last_come_first_serve();
+        if (p == 0)
+            p = first_come_first_serve();
         if (p == 0) {
             release(&ptable.lock);
             continue;
-        } // indentationists go to hell
+        }
 
-        // Switch to chosen process.  It is the process's job
-        // to release ptable.lock and then reacquire it
-        // before jumping back to us.
         c->proc = p;
         switchuvm(p);
         p->state = RUNNING;
 
+        p->wait_time = 0;  // Reset wait time after process is scheduled
         p->sched.last_exec = ticks;
         p->sched.bjf.executed_cycle += 0.1f;
 
         swtch(&(c->scheduler), p->context);
         switchkvm();
 
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
         c->proc = 0;
         release(&ptable.lock);
     }
 }
+
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
@@ -721,6 +729,7 @@ void sleep(void* chan, struct spinlock* lk) {
     }
 }
 
+
 // PAGEBREAK!
 //  Wake up all processes sleeping on chan.
 //  The ptable lock must be held.
@@ -760,6 +769,11 @@ int kill(int pid) {
     release(&ptable.lock);
     return -1;
 }
+
+// PAGEBREAK: 36
+//  Print a process listing to console.  For debugging.
+//  Runs when user types ^P on console.
+//  No lock to avoid wedging a stuck machine further.
 
 // PAGEBREAK: 36
 //  Print a process listing to console.  For debugging.
@@ -828,31 +842,29 @@ int droot(int n) {
     return n;
 }
 
-// int nsyscalls(void) {
-//     getnsyscall();
-//     return 0;
-// }
+int nsyscalls(void) {
+    getnsyscall();
+    return 0;
+}
 
-// int pacquire(void) {
-//     if (isholdingpriority(&plock))
-//         return -1;
-//     acquirepriority(&plock);
-//     return myproc()->pid;
-// }
+int pacquire(void) {
+    if (isholdingpriority(&plock))
+        return -1;
+    acquirepriority(&plock);
+    return myproc()->pid;
+}
 
-// int prelease(void) {
-//     if (!isholdingpriority(&plock))
-//         return -1;
-//     releasepriority(&plock);
-//     return 0;
-// }
+int prelease(void) {
+    if (!isholdingpriority(&plock))
+        return -1;
+    releasepriority(&plock);
+    return 0;
+}
 
-// int pqueue(void) {
-//     showlockqueue(&plock);
-//     return 0;
-// }
-
-
+int pqueue(void) {
+    showlockqueue(&plock);
+    return 0;
+}
 
 
 int get_most_invoked(void){

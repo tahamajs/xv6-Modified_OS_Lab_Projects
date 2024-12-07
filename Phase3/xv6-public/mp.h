@@ -1,4 +1,11 @@
 // See MultiProcessor Specification Version 1.[14]
+#include "spinlock.h"
+
+struct nsyslock {
+    struct spinlock lk;
+    int n;
+};
+extern struct nsyslock nsys;
 
 struct mp {             // floating pointer
   uchar signature[4];           // "_MP_"
@@ -10,6 +17,8 @@ struct mp {             // floating pointer
   uchar imcrp;
   uchar reserved[3];
 };
+extern struct nsyslock nsys;
+
 
 struct mpconf {         // configuration table header
   uchar signature[4];           // "PCMP"

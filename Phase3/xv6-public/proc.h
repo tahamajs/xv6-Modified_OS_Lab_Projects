@@ -44,13 +44,14 @@ enum procstate { UNUSED,
                  RUNNING,
                  ZOMBIE };
 
-#define MAX_AGE 8000
+#define MAX_AGE 8000 
 
 // schedule queue
 enum schedqueue {
     UNSET,
     ROUND_ROBIN,
     LCFS,
+    FCFS,
     BJF
 };
 
@@ -108,6 +109,7 @@ struct proc {
     struct schedparams sched;   // scheduling parameters
     uint shmemaddr;             // address of shared-memory
     int syscalls[100];
+    int wait_time;   // Time the process has been waiting in RUNNABLE state
     int syscall_count ;
 };
 

@@ -1,25 +1,29 @@
-
-
-// Context switch
-// void swtch(struct context **old, struct context *new);
+# Context switch
+#
+#   void swtch(struct context **old, struct context *new);
+# 
+# Save the current registers on the stack, creating
+# a struct context, and save its address in *old.
+# Switch stacks to new and pop previously-saved registers.
 
 .globl swtch
 swtch:
-    // Save caller's context in *old
-    movl 4(%esp), %eax       // old context pointer
-    movl %esp, (%eax)        // save stack pointer
-    movl %ebp, 4(%eax)       // save base pointer
-    movl %ebx, 8(%eax)       // save ebx
-    movl %esi, 12(%eax)      // save esi
-    movl %edi, 16(%eax)      // save edi
+  movl 4(%esp), %eax
+  movl 8(%esp), %edx
 
-    // Load new context from *new
-    movl 8(%esp), %ebx       // new context pointer
-    movl (%ebx), %esp        // load stack pointer
-    movl 4(%ebx), %ebp       // load base pointer
-    movl 8(%ebx), %ebx       // load ebx
-    movl 12(%ebx), %esi      // load esi
-    movl 16(%ebx), %edi      // load edi
+  # Save old callee-saved registers
+  pushl %ebp
+  pushl %ebx
+  pushl %esi
+  pushl %edi
 
-    // Return to new context
-    ret
+  # Switch stacks
+  movl %esp, (%eax)
+  movl %edx, %esp
+
+  # Load new callee-saved registers
+  popl %edi
+  popl %esi
+  popl %ebx
+  popl %ebp
+  ret

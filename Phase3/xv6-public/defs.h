@@ -9,12 +9,15 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+struct bjfparams;
+struct prioritylock;
 
 // bio.c
 void binit(void);
 struct buf* bread(uint, uint);
 void brelse(struct buf*);
 void bwrite(struct buf*);
+
 
 // console.c
 void consoleinit(void);
@@ -57,11 +60,11 @@ int writei(struct inode*, char*, uint, uint);
 void ideinit(void);
 void ideintr(void);
 void iderw(struct buf*);
-
 // ioapic.c
 void ioapicenable(int irq, int cpu);
 extern uchar ioapicid;
 void ioapicinit(void);
+
 
 // kalloc.c
 char* kalloc(void);
@@ -80,6 +83,8 @@ void lapiceoi(void);
 void lapicinit(void);
 void lapicstartap(uchar, uint);
 void microdelay(int);
+// void initprioritylock(struct prioritylock*, char*);
+
 
 // log.c
 void initlog(int dev);
@@ -101,8 +106,7 @@ void pipeclose(struct pipe*, int);
 int piperead(struct pipe*, char*, int);
 int pipewrite(struct pipe*, char*, int);
 
-//PAGEBREAK: 16
-// proc.c
+//  proc.c
 int cpuid(void);
 void exit(void);
 int fork(void);
@@ -120,9 +124,20 @@ void userinit(void);
 int wait(void);
 void wakeup(void*);
 void yield(void);
-int set_scheduling_queue(int pid, int queue);
-int print_processes_info(void);
-
+int nuncle(void);
+int ptime(void);
+int droot(int);
+int change_queue(int, int);
+int init_queue(int);
+void aging(int);
+int set_bjs_proc(int, float, float, float, float);
+int set_bjs_sys(float, float, float, float);
+float procrank(struct bjfparams);
+int print_processes_infos(void);
+int pacquire(void);
+int prelease(void);
+int pqueue(void);
+int nsyscalls(void);
 // swtch.S
 void swtch(struct context**, struct context*);
 
@@ -135,11 +150,20 @@ void release(struct spinlock*);
 void pushcli(void);
 void popcli(void);
 
+
 // sleeplock.c
 void acquiresleep(struct sleeplock*);
 void releasesleep(struct sleeplock*);
 int holdingsleep(struct sleeplock*);
 void initsleeplock(struct sleeplock*, char*);
+
+// prioritylock.c
+void initprioritylock(struct prioritylock*, char*);
+void acquirepriority(struct prioritylock*);
+void releasepriority(struct prioritylock*);
+void showlockqueue(struct prioritylock*);
+int isprioritylocked(struct prioritylock*);
+int isholdingpriority(struct prioritylock*);
 
 // string.c
 int memcmp(const void*, const void*, uint);
@@ -150,13 +174,18 @@ int strlen(const char*);
 int strncmp(const char*, const char*, uint);
 char* strncpy(char*, const char*, int);
 
+
 // syscall.c
 int argint(int, int*);
 int argptr(int, char**, int);
 int argstr(int, char**);
+int argfloat(int, float*);
 int fetchint(uint, int*);
 int fetchstr(uint, char**);
+int fetchfloat(uint, float*);
 void syscall(void);
+void getnsyscall(void);
+
 
 // timer.c
 void timerinit(void);
@@ -171,7 +200,6 @@ extern struct spinlock tickslock;
 void uartinit(void);
 void uartintr(void);
 void uartputc(int);
-int init_queue(int);
 
 // vm.c
 void seginit(void);
