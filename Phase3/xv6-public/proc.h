@@ -56,7 +56,7 @@ enum schedqueue {
 };
 
 // BJF priority
-enum schedpriroty {
+enum schedpriority {
     HIGH = 1,
     ABOVE_NORMAL,
     NORMAL,
@@ -66,7 +66,7 @@ enum schedpriroty {
 
 // bjs parameters
 struct bjfparams {
-    enum schedpriroty priority;
+    enum schedpriority priority;
     float executed_cycle;
     int arrival_time;
     int process_size;
@@ -92,7 +92,6 @@ struct schedparams {
 
 // Per-process state
 struct proc {
-<<<<<<< HEAD
     uint sz;                    // Size of process memory (bytes)
     pde_t* pgdir;               // Page table
     char* kstack;               // Bottom of kernel stack for this process
@@ -112,51 +111,5 @@ struct proc {
     int syscalls[100];
     int wait_time;   // Time the process has been waiting in RUNNABLE state
     int syscall_count ;
-=======
-  uint sz;                     // Size of process memory (bytes)
-  pde_t* pgdir;                // Page table
-  char *kstack;                // Bottom of kernel stack for this process
-  enum procstate state;        // Process state
-  int pid;                     // Process ID
-  struct proc *parent;         // Parent process
-  struct trapframe *tf;        // Trap frame for current syscall
-  struct context *context;     // swtch() here to run process
-  void *chan;                  // If non-zero, sleeping on chan
-  int killed;                  // If non-zero, have been killed
-  int syscalls[MAX_SYSCALLS];  // Array to hold count of each syscall for this process
-  int syscall_count;  
-  struct file *ofile[NOFILE];  // Open files
-  struct inode *cwd;           // Current directory
-  char name[16];               // Process name (debugging)
-  int creation_time;           // Time of creation (in ticks)
-  struct schedinfo sched_info; // Scheduling information
-  sharedPages pages[SHAREDREGIONS]; // Shared memory pages info
-  int arrival_time;     // زمان ورود پردازه (برای FCFS)
-  int estimated_runtime; // زمان اجرای تخمینی (برای SJF)
-  int priority_level;    // سطح اولویت پردازه (برای Aging)
-  int queue_level;       // سطح صف پردازه (0: RR, 1: SJF, 2: FCFS)
-  int wait_time;         // زمان انتظار پردازه
-  int runticks;          // Number of ticks this process has run
-  int weight;            // Weight for WRR scheduling
-  int queue_weight;      // Weight of current queue (1,2,3)
-
-  // Scheduling information
-  int queue_level;         // 0: LEVEL1_RR, 1: LEVEL2_SJF, 2: LEVEL3_FCFS
-  int estimated_runtime;   // Estimated runtime for SJF
-  int confidence_level;    // Confidence level (0-100)
-  int wait_time;           // Time spent waiting in ticks
-  int arrival_time;        // Arrival time in ticks
->>>>>>> 449691d (feat: Implement Multilevel Feedback Queue Scheduler with Aging)
 };
-
-// Process memory is laid out contiguously, low addresses first:
-//   text
-//   original data and bss
-//   fixed-size stack
-//   expandable heap
-
-// struct {
-//     struct spinlock lock;
-//     struct proc proc[NPROC];
-// } ptable;
 
