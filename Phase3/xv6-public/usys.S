@@ -41,3 +41,12 @@ SYSCALL(move_file)
 SYSCALL(sort_syscalls)
 SYSCALL(get_most_invoked_syscall)
 SYSCALL(list_all_processes)
+
+SYSCALL(changequeue)
+SYSCALL(setbjfparams)
+SYSCALL(setsystembjf)
+SYSCALL(printprocs)
+
+SYSCALL(set_estimated_runtime)
+SYSCALL(change_queue)
+SYSCALL(print_processes_info)

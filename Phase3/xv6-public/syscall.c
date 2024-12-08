@@ -131,10 +131,9 @@ extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_set_scheduling_queue(void);
-extern int sys_procinfo(void);
-extern int sys_chqueue(void);
-extern int sys_bjsproc(void);
-extern int sys_bjssys(void);
+extern int sys_print_processes_info(void);
+extern int sys_change_queue(void);
+extern int sys_set_estimated_runtime(void);
 
 
 static int (*syscalls[])(void) = {

@@ -54,3 +54,9 @@ int procinfo(void);
 
 int set_scheduling_queue(int pid, int queue);
 int print_processes_info(void);
+int set_estimated_runtime(int pid, int runtime);
+int change_queue(int pid, int queue);
+
+int change_queue(int pid, int new_queue_level);
+int set_estimated_runtime(int pid, int runtime, int confidence);
+int print_processes_info(void);

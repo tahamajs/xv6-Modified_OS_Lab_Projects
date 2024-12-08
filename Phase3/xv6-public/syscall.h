@@ -20,17 +20,18 @@
 #define SYS_link                    19
 #define SYS_mkdir                   20
 #define SYS_close                   21
-#define SYS_create_palindrome       22
-#define SYS_move_file               23
-#define SYS_sort_syscalls           24
-#define SYS_get_most_invoked_syscall 25
-#define SYS_list_all_processes      26
-#define SYS_set_scheduling_queue    27
-#define SYS_print_processes_info    28
-
-#define SYS_chqueue    29
-#define SYS_bjsproc    30
-#define SYS_bjssys     31
+#define SYS_change_queue            22
+#define SYS_set_estimated_runtime   23
+#define SYS_print_processes_info    24
+#define SYS_create_palindrome       25
+#define SYS_move_file               26
+#define SYS_sort_syscalls           27
+#define SYS_get_most_invoked_syscall 28
+#define SYS_list_all_processes      29
+#define SYS_set_scheduling_queue    30
+#define SYS_printprocs              31
+#define SYS_setbjfparams            32
+#define SYS_setsystembjf            33
 
 #define MAX_SYSCALLS                  100
 

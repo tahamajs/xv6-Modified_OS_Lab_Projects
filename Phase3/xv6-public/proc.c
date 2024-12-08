@@ -609,35 +609,69 @@ void scheduler(void) {
 
         acquire(&ptable.lock);
 
-
-        // Call aging function to promote processes
-        aging(ticks);
-
-        p = round_robin(last_scheduled);
-        last_scheduled = (p != 0) ? p : last_scheduled;
-        if (p == 0)
-            p = best_job_first();
-        if (p == 0)
-            p = first_come_first_serve();
-        if (p == 0) {
-            release(&ptable.lock);
-            continue;
+    // Implement aging
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state == RUNNABLE) {
+        p->wait_time++;
+        if(p->wait_time > AGING_THRESHOLD && p->queue_level > 0) {
+          p->queue_level--;
+          p->wait_time = 0;
         }
-
-        c->proc = p;
-        switchuvm(p);
-        p->state = RUNNING;
-
-        p->wait_time = 0;  // Reset wait time after process is scheduled
-        p->sched.last_exec = ticks;
-        p->sched.bjf.executed_cycle += 0.1f;
-
-        swtch(&(c->scheduler), p->context);
-        switchkvm();
-
-        c->proc = 0;
-        release(&ptable.lock);
+      }
     }
+
+    // Multilevel Feedback Queue Scheduling
+    struct proc *selected = 0;
+    for(int level = 0; level < 3; level++) {
+      selected = 0;
+      if(level == 0) {
+        // Level 1: Round Robin
+        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+          if(p->state == RUNNABLE && p->queue_level == 0) {
+            selected = p;
+            break;
+          }
+        }
+      } else if(level == 1) {
+        // Level 2: SJF
+        int min_runtime = -1;
+        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+          if(p->state == RUNNABLE && p->queue_level == 1) {
+            if(min_runtime == -1 || p->estimated_runtime < min_runtime){
+              min_runtime = p->estimated_runtime;
+              selected = p;
+            }
+          }
+        }
+      } else if(level == 2) {
+        // Level 3: FCFS
+        int earliest_arrival = -1;
+        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+          if(p->state == RUNNABLE && p->queue_level == 2) {
+            if(earliest_arrival == -1 || p->arrival_time < earliest_arrival){
+              earliest_arrival = p->arrival_time;
+              selected = p;
+            }
+          }
+        }
+      }
+
+      if(selected)
+        break;
+    }
+
+    if(selected != 0) {
+      c->proc = selected;
+      switchuvm(selected);
+      selected->state = RUNNING;
+      selected->wait_time = 0;
+      swtch(&(c->scheduler), selected->context);
+      switchkvm();
+      c->proc = 0;
+    }
+
+    release(&ptable.lock);
+  }
 }
 
 

@@ -27,31 +27,13 @@ int sys_chqueue(void) {
 
     return change_queue(pid, queue);
 }
-int sys_bjsproc(void) {
-    int pid;
-    float priority_ratio, arrival_time_ratio, executed_cycle_ratio, process_size_ratio;
-    if (argint(0, &pid) < 0 ||
-        argfloat(1, &priority_ratio) < 0 ||
-        argfloat(2, &arrival_time_ratio) < 0 ||
-        argfloat(3, &executed_cycle_ratio) < 0 ||
-        argfloat(4, &process_size_ratio) < 0) return -1;
 
-    return set_bjs_proc(pid, priority_ratio, arrival_time_ratio, executed_cycle_ratio, process_size_ratio);
-}
-
-int sys_bjssys(void) {
-    float priority_ratio, arrival_time_ratio, executed_cycle_ratio, process_size_ratio;
-    if (argfloat(0, &priority_ratio) < 0 ||
-        argfloat(1, &arrival_time_ratio) < 0 ||
-        argfloat(2, &executed_cycle_ratio) < 0 ||
-        argfloat(3, &process_size_ratio) < 0) return -1;
-
-    return set_bjs_sys(priority_ratio, arrival_time_ratio, executed_cycle_ratio, process_size_ratio);
-}
-
-
-int sys_procinfo(void) {
-    return print_processes_infos();
+// System call to print processes information
+int
+sys_print_processes_info(void)
+{
+  print_processes_info();
+  return 0;
 }
 
 
@@ -176,5 +158,40 @@ sys_get_most_invoked_syscall(void)
 int
 sys_list_all_processes(void)
 {
-    list_proceases();
+    struct proc *p;
+
+    acquire(&ptable.lock);
+    cprintf("PID    Syscall Count  Process Name\n");
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state != UNUSED && p->state != ZOMBIE) {
+            cprintf("%d      %d            %s\n", p->pid, p->syscall_count, p->name);
+        }
+    }
+    release(&ptable.lock);
+
+    return 0;
+}
+
+int
+sys_set_estimated_runtime(void)
+{
+  int pid, runtime, confidence;
+  if(argint(0, &pid) < 0)
+    return -1;
+  if(argint(1, &runtime) < 0)
+    return -1;
+  if(argint(2, &confidence) < 0)
+    return -1;
+  return set_estimated_runtime(pid, runtime, confidence);
+}
+
+int
+sys_change_queue(void)
+{
+  int pid, new_queue_level;
+  if(argint(0, &pid) < 0)
+    return -1;
+  if(argint(1, &new_queue_level) < 0)
+    return -1;
+  return change_queue(pid, new_queue_level);
 }
