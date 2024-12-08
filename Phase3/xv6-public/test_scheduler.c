@@ -1,7 +1,9 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
+// #include "defs.h"
 #include "fcntl.h"
+// #include "proc.h"
 
 // Custom string formatting function
 void format_string(char* buffer, const char* format, ...) {
@@ -126,7 +128,8 @@ void test_scheduling_queues(int log_fd) {
     // SJF Process
     if ((pids[1] = fork()) == 0) {
         change_queue(getpid(), 1);
-        set_sjf_proc(getpid(), 1.0, 0.5, 0.3, 0.2);
+        // set_sjf_proc(getpid(), 1, 2, 3, 4);
+        set_SJF_params(getpid(), 100, 80);
         format_string(buffer, "SJF Process (PID: %d) started\n", getpid());
         write_to_file(log_fd, buffer);
         
@@ -205,6 +208,24 @@ void test_queue_changes(int log_fd) {
     }
 }
 
+void test_set_SJF_params(int log_fd) {
+    format_string(buffer, "\n=== Testing set_SJF_params System Call ===\n");
+    write_to_file(log_fd, buffer);
+
+    int pid = fork();
+
+    if (pid == 0) {
+        int burst_time = 100;
+        int confidence = 80;
+        set_SJF_params(getpid(), burst_time, confidence);
+        format_string(buffer, "Child process (PID: %d) set SJF params: burst_time=%d, confidence=%d\n", getpid(), burst_time, confidence);
+        write_to_file(log_fd, buffer);
+        exit();
+    } else {
+        wait();
+    }
+}
+
 int main(void) {
     // Create log file with timestamp
     char filename[32];
@@ -226,7 +247,8 @@ int main(void) {
     test_queue_changes(log_fd);
     test_scheduling_queues(log_fd);
     test_aging(log_fd);
-    
+    test_set_SJF_params(log_fd);
+
     // Write completion message
     write_to_file(log_fd, "\nAll tests completed.\n");
     

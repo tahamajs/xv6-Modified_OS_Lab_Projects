@@ -9,9 +9,9 @@ void create_processes(int num_processes) {
             printf(1, "Fork failed\n");
             exit();
         } else if (pid == 0) {
-            // Child process
+            // Child processp
             for (int j = 0; j < 100; j++) {
-                printf(1, "Process %d running\n", getpid());
+                printf(1, "Process %d running\n with pid %d\n", i, getpid());   
                 sleep(10); // Use sleep from user.h
             }
             exit();

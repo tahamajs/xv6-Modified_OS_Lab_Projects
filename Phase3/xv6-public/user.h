@@ -56,6 +56,7 @@ int set_scheduling_queue(int pid, int queue);
 int print_processes_info(void);
 int set_estimated_runtime(int pid, int runtime);
 int change_queue(int pid, int queue);
+int set_SJF_params(int pid, int burst_time, int confidence);
 
 int user_program(void);
 

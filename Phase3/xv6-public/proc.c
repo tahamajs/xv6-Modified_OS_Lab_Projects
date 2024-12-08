@@ -560,6 +560,10 @@ float procrank(struct sjfparams params) {
             params.process_size * params.process_size_ratio);
 }
 
+int procrank_burst_time(struct proc* p) {
+    return p->sched.sjf.burst_time;
+}
+
 struct proc* best_job_first(void) {
     struct proc* next_p = 0;
     float best_rank;
@@ -694,10 +698,11 @@ int random(void) {
 struct proc* select_sjf(void) {
     struct proc* selected = 0;
     float best_rank = -1;
+
     for (struct proc* p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->state != RUNNABLE || p->sched.queue != SJF)
             continue;
-        float rank = procrank(p->sched.sjf);
+        float rank = procrank_burst_time(p);
         if (selected == 0 || rank < best_rank) {
             selected = p;
             best_rank = rank;
@@ -705,7 +710,7 @@ struct proc* select_sjf(void) {
     }
     if (selected) {
         int random_value = random() % 100;
-        if (random_value <= selected->sched.sjf.priority_ratio) {
+        if (random_value <= selected->sched.sjf.confidence_level) {
             return selected;
         }
     }
@@ -1038,9 +1043,19 @@ int bjssys(float a, float b, float c, float d) {
     return 0;
 }
 
-int set_estimated_runtime(int pid, int runtime, int confidence) {
-    // Implement the function logic here
-    return 0;
+int set_SJF_params(int pid, int burst_time, int confidence) {
+    struct proc *p;
+    acquire(&ptable.lock);
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->pid == pid) {
+            p->sched.sjf.burst_time = burst_time;
+            p->sched.sjf.confidence_level = confidence;
+            release(&ptable.lock);
+            return 0;
+        }
+    }
+    release(&ptable.lock);
+    return -1;
 }
 
 // int exec(char *path, char **argv) {

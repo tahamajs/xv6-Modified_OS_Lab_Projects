@@ -137,6 +137,7 @@ int prelease(void);
 int pqueue(void);
 int nsyscalls(void);
 int user_program(void);
+int set_SJF_params(int pid, int burst_time, int confidence);
 
 // swtch.S
 void swtch(struct context**, struct context*);
@@ -232,6 +233,8 @@ struct sjfparams {
     float executed_cycle;
     int arrival_time;
     int process_size;
+    int burst_time;
+    int confidence_level;
 
     float priority_ratio;
     float executed_cycle_ratio;
@@ -239,4 +242,4 @@ struct sjfparams {
     float process_size_ratio;
 };
 
-float procrank(struct sjfparams params);
+// float procrank(struct sjfparams params);

@@ -35,7 +35,8 @@
 #define SYS_chqueue                 34
 #define SYS_bjsproc                 35
 #define SYS_bjssys                  36
-#define SYS_user_program            37
+#define SYS_user_program             37
+#define SYS_set_SJF_params           38  // Use the next available syscall number
 
 #define MAX_SYSCALLS                  100
 

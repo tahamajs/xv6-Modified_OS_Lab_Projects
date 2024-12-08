@@ -73,6 +73,8 @@ enum schedqueue {
 //     float executed_cycle_ratio;
 //     float arrival_time_ratio;
 //     float process_size_ratio;
+//     int burst_time;
+//     int confidence_level;
 // };
 
 // schedule info
