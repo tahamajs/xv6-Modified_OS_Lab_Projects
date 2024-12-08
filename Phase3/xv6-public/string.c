@@ -65,6 +65,14 @@ strncmp(const char *p, const char *q, uint n)
   return (uchar)*p - (uchar)*q;
 }
 
+int strcmp(const char *s1, const char *s2) {
+    while(*s1 && (*s1 == *s2)){
+        s1++;
+        s2++;
+    }
+    return *(unsigned char*)s1 - *(unsigned char*)s2;
+}
+
 char*
 strncpy(char *s, const char *t, int n)
 {

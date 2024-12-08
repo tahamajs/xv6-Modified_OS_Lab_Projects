@@ -7,12 +7,12 @@
 #include "proc.h"
 #include "spinlock.h"
 #include "prioritylock.h"
+#include "string.h"
 
 // Function declarations
 struct proc* select_round_robin(void);
 struct proc* select_sjf(void);
 struct proc* select_fcfs(void);
-int random(void);  // Add random function declaration
 // float procrank(struct sjfparams params);
 
 struct {
@@ -1041,11 +1041,11 @@ int set_estimated_runtime(int pid, int runtime, int confidence) {
     return 0;
 }
 
-int exec(char *path, char **argv) {
-    // ...existing code...
-    struct proc *curproc = myproc();
-    if (curproc != initproc && strcmp(curproc->name, "sh") != 0) {
-        change_queue(curproc->pid, FCFS);
-    }
-    // ...existing code...
-}
+// int exec(char *path, char **argv) {
+//     // ...existing code...
+//     struct proc *curproc = myproc();
+//     if (curproc != initproc && strcmp(curproc->name, "sh") != 0) {
+//         change_queue(curproc->pid, FCFS);
+//     }
+//     // ...existing code...
+// }
