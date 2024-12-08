@@ -88,6 +88,8 @@ extern int sys_chqueue(void);
 extern int sys_bjsproc(void);
 extern int sys_bjssys(void);
 extern int sys_changequeue(void);
+extern int sys_set_sjf_proc(void);
+extern int sys_set_sjf_sys(void);
 
 
 
@@ -170,9 +172,11 @@ static int (*syscalls[])(void) = {
     [SYS_set_scheduling_queue]    sys_set_scheduling_queue,
     [SYS_print_processes_info]    sys_print_processes_info,
     [SYS_chqueue]                 sys_chqueue,
-    [SYS_bjsproc]                 sys_bjsproc,
-    [SYS_bjssys]                  sys_bjssys,
-    [SYS_changequeue]             sys_changequeue,
+    // [SYS_bjsproc]                 sys_bjsproc,
+    // [SYS_bjssys]                  sys_bjssys,
+    [SYS_set_sjf_proc]            sys_set_sjf_proc,
+    [SYS_set_sjf_sys]             sys_set_sjf_sys,
+    [SYS_change_queue]            sys_change_queue,
 };
 
 

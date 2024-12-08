@@ -1,3 +1,6 @@
+#pragma once
+
+
 struct buf;
 struct context;
 struct file;
@@ -132,7 +135,7 @@ int init_queue(int);
 void aging(int);
 int set_bjs_proc(int, float, float, float, float);
 int set_bjs_sys(float, float, float, float);
-float procrank(struct bjfparams);
+// float procrank(struct sjfparams);
 int print_processes_infos(void);
 int pacquire(void);
 int prelease(void);
@@ -220,3 +223,26 @@ void clearpteu(pde_t *pgdir, char *uva);
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 #define MAX_SYSCALLS 100
 extern int syscall_counts[MAX_SYSCALLS];
+// SJF priority
+enum schedpriority {
+    HIGH = 1,
+    ABOVE_NORMAL,
+    NORMAL,
+    BELOW_NORMAL,
+    LOW
+};
+
+struct sjfparams {
+    enum schedpriority priority;
+    float executed_cycle;
+    int arrival_time;
+    int process_size;
+
+    float priority_ratio;
+    float executed_cycle_ratio;
+    float arrival_time_ratio;
+    float process_size_ratio;
+};
+// float procrank(struct sjfparams);
+
+float procrank(struct sjfparams params);

@@ -1,6 +1,6 @@
 #include "types.h"
 #include "defs.h"
-#include "param.h"
+#include "param.h"  // Include param.h for WEIGHT_* constants
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
@@ -40,6 +40,15 @@ main(void)
   startothers();   // start other processors
   kinit2(P2V(4*1024*1024), P2V(PHYSTOP)); // must come after startothers()
   userinit();      // first user process
+
+  for (int i = 0; i < ncpu; i++) {
+    cpus[i].time_slice = 0;
+    cpus[i].current_queue = 0;
+    cpus[i].queue_weights[0] = WEIGHT_ROUND_ROBIN;
+    cpus[i].queue_weights[1] = WEIGHT_SJF;
+    cpus[i].queue_weights[2] = WEIGHT_FCFS;
+  }
+
   mpmain();        // finish this processor's setup
 }
 

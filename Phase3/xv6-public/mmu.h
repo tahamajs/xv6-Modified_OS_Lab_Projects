@@ -1,6 +1,6 @@
 // This file contains definitions for the
 // x86 memory management unit (MMU).
-
+#pragma once
 // Eflags register
 #define FL_IF           0x00000200      // Interrupt Enable
 

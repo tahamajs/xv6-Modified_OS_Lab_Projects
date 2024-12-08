@@ -1,5 +1,10 @@
 #pragma once
+#include "param.h"  // Include param.h for constants like NCPU, NOFILE, etc.
+#include "mmu.h"    // Include mmu.h for types like pde_t and taskstate
 #include "spinlock.h"
+#include "defs.h"
+
+
 // Per-CPU state
 struct cpu {
     uchar apicid;              // Local APIC ID
@@ -11,9 +16,10 @@ struct cpu {
     int intena;                // Were interrupts enabled before pushcli?
     struct proc* proc;         // The process running on this cpu or null
     int nsyscall;              // number of system calls
+    int time_slice;            // Time slice for the current queue
+    int current_queue;         // Current queue being scheduled
+    int queue_weights[3];      // Weights for the queues
 };
-
-
 
 extern struct cpu cpus[NCPU];
 extern int ncpu;
@@ -46,49 +52,36 @@ enum procstate { UNUSED,
 
 #define MAX_AGE 8000 
 
+
 // schedule queue
 enum schedqueue {
     UNSET,
     ROUND_ROBIN,
     LCFS,
     FCFS,
-    BJF
+    SJF
 };
 
-// BJF priority
-enum schedpriority {
-    HIGH = 1,
-    ABOVE_NORMAL,
-    NORMAL,
-    BELOW_NORMAL,
-    LOW
-};
+// // sjf parameters
+// struct sjfparams {
+//     enum schedpriority priority;
+//     float executed_cycle;
+//     int arrival_time;
+//     int process_size;
 
-// bjs parameters
-struct bjfparams {
-    enum schedpriority priority;
-    float executed_cycle;
-    int arrival_time;
-    int process_size;
-
-    float priority_ratio;
-    float executed_cycle_ratio;
-    float arrival_time_ratio;
-    float process_size_ratio;
-};
+//     float priority_ratio;
+//     float executed_cycle_ratio;
+//     float arrival_time_ratio;
+//     float process_size_ratio;
+// };
 
 // schedule info
 struct schedparams {
     enum schedqueue queue;
-    struct bjfparams bjf;
+    struct sjfparams sjf;
     int last_exec;
+    int executed_cycle; // Add this line
 };
-
-
-
-
-
-
 
 // Per-process state
 struct proc {

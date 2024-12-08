@@ -12,3 +12,7 @@
 #define NBUF         (MAXOPBLOCKS*3)  // size of disk block cache
 #define FSSIZE       1000  // size of file system in blocks
 
+#define WEIGHT_ROUND_ROBIN 3
+#define WEIGHT_SJF 2
+#define WEIGHT_FCFS 1
+

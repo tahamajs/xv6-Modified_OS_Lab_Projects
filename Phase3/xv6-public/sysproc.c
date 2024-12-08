@@ -9,8 +9,10 @@
 #include "spinlock.h"
 
 // Add function declarations
-int bjsproc(int pid, float a, float b, float c, float d);
-int bjssys(float a, float b, float c, float d);
+int set_sjf_proc(int pid, float priority_ratio, float arrival_time_ratio,
+                 float executed_cycle_ratio, float process_size_ratio);
+int set_sjf_sys(float priority_ratio, float arrival_time_ratio,
+                float executed_cycle_ratio, float process_size_ratio);
 int print_processes_infos(void);
 void sort_syscalls(void);
 int get_most_invoked(void);
@@ -27,27 +29,20 @@ int sys_set_scheduling_queue(void)
     return change_queue(pid, queue);
 }
 
-int sys_chqueue(void) {
-    int pid, queue;
-    if (argint(0, &pid) < 0 || argint(1, &queue) < 0)
-        return -1;
 
-    return change_queue(pid, queue);
-}
-
-int sys_bjsproc(void) {
+int sys_set_sjf_proc(void) {
     int pid;
     float a, b, c, d;
     if (argint(0, &pid) < 0 || argfloat(1, &a) < 0 || argfloat(2, &b) < 0 || argfloat(3, &c) < 0 || argfloat(4, &d) < 0)
         return -1;
-    return bjsproc(pid, a, b, c, d);
+    return set_sjf_proc(pid, a, b, c, d);
 }
 
-int sys_bjssys(void) {
+int sys_set_sjf_sys(void) {
     float a, b, c, d;
     if (argfloat(0, &a) < 0 || argfloat(1, &b) < 0 || argfloat(2, &c) < 0 || argfloat(3, &d) < 0)
         return -1;
-    return bjssys(a, b, c, d);
+    return set_sjf_sys(a, b, c, d);
 }
 
 // Correct function names
@@ -204,9 +199,7 @@ sys_change_queue(void)
   return change_queue(pid, new_queue_level);
 }
 
-int sys_changequeue(void) {
-    int pid, new_queue_level;
-    if (argint(0, &pid) < 0 || argint(1, &new_queue_level) < 0)
-        return -1;
-    return change_queue(pid, new_queue_level);
+// Alias for change_queue
+int sys_chqueue(void) {
+    return sys_change_queue();
 }

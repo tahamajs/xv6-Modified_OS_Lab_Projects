@@ -8,6 +8,13 @@
 #include "spinlock.h"
 #include "prioritylock.h"
 
+// Function declarations
+struct proc* select_round_robin(void);
+struct proc* select_sjf(void);
+struct proc* select_fcfs(void);
+int random(void);  // Add random function declaration
+// float procrank(struct sjfparams params);
+
 struct {
     struct spinlock lock;
     struct proc proc[NPROC];
@@ -113,15 +120,15 @@ found:
 
     memset(&p->sched, 0, sizeof(p->sched));
     p->sched.queue = UNSET;
-    p->sched.bjf.priority = NORMAL;
-    p->sched.bjf.arrival_time = 0;
-    p->sched.bjf.executed_cycle = 0;
-    p->sched.bjf.process_size = 0;
+    p->sched.sjf.priority = NORMAL;
+    p->sched.sjf.arrival_time = 0;
+    p->sched.sjf.executed_cycle = 0;
+    p->sched.sjf.process_size = 0;
 
-    p->sched.bjf.priority_ratio = 1;
-    p->sched.bjf.arrival_time_ratio = 1;
-    p->sched.bjf.executed_cycle_ratio = 1;
-    p->sched.bjf.process_size_ratio = 1;
+    p->sched.sjf.priority_ratio = 1;
+    p->sched.sjf.arrival_time_ratio = 1;
+    p->sched.sjf.executed_cycle_ratio = 1;
+    p->sched.sjf.process_size_ratio = 1;
 
     return p;
 }
@@ -228,12 +235,12 @@ int fork(void) {
 
     acquire(&tickslock);
     np->sched.last_exec = ticks;
-    np->sched.bjf.arrival_time = ticks;
+    np->sched.sjf.arrival_time = ticks;
     np->ctime = ticks;
     release(&tickslock);
 
     // IDK, maybe ?!
-    np->sched.bjf.process_size = sizeof(np);
+    np->sched.sjf.process_size = sizeof(np);
 
     init_queue(np->pid);
 
@@ -392,7 +399,7 @@ int change_queue(int pid, int new_queue) {
     return 0;
 }
 
-int set_bjs_proc(int pid, float priority_ratio, float arrival_time_ratio,
+int set_sjf_proc(int pid, float priority_ratio, float arrival_time_ratio,
                  float executed_cycle_ratio, float process_size_ratio) {
     struct proc* p;
     int is_pid_exist = 0;
@@ -400,10 +407,10 @@ int set_bjs_proc(int pid, float priority_ratio, float arrival_time_ratio,
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->pid == pid) {
             is_pid_exist = 1;
-            p->sched.bjf.priority_ratio = priority_ratio;
-            p->sched.bjf.arrival_time_ratio = arrival_time_ratio;
-            p->sched.bjf.executed_cycle_ratio = executed_cycle_ratio;
-            p->sched.bjf.process_size_ratio = process_size_ratio;
+            p->sched.sjf.priority_ratio = priority_ratio;
+            p->sched.sjf.arrival_time_ratio = arrival_time_ratio;
+            p->sched.sjf.executed_cycle_ratio = executed_cycle_ratio;
+            p->sched.sjf.process_size_ratio = process_size_ratio;
             break;
         }
     }
@@ -414,15 +421,15 @@ int set_bjs_proc(int pid, float priority_ratio, float arrival_time_ratio,
     return 0;
 }
 
-int set_bjs_sys(float priority_ratio, float arrival_time_ratio,
+int set_sjf_sys(float priority_ratio, float arrival_time_ratio,
                 float executed_cycle_ratio, float process_size_ratio) {
     struct proc* p;
     acquire(&ptable.lock);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        p->sched.bjf.priority_ratio = priority_ratio;
-        p->sched.bjf.arrival_time_ratio = arrival_time_ratio;
-        p->sched.bjf.executed_cycle_ratio = executed_cycle_ratio;
-        p->sched.bjf.process_size_ratio = process_size_ratio;
+        p->sched.sjf.priority_ratio = priority_ratio;
+        p->sched.sjf.arrival_time_ratio = arrival_time_ratio;
+        p->sched.sjf.executed_cycle_ratio = executed_cycle_ratio;
+        p->sched.sjf.process_size_ratio = process_size_ratio;
     }
     release(&ptable.lock);
 
@@ -479,31 +486,31 @@ int print_processes_infos(void) {
         cprintf("%d", p->sched.queue);
         printspaces(columns[3] - digitcount(p->sched.queue));
 
-        cprintf("%d", (int)p->sched.bjf.executed_cycle);
-        printspaces(columns[4] - digitcount((int)p->sched.bjf.executed_cycle));
+        cprintf("%d", (int)p->sched.sjf.executed_cycle);
+        printspaces(columns[4] - digitcount((int)p->sched.sjf.executed_cycle));
 
-        cprintf("%d", p->sched.bjf.arrival_time);
-        printspaces(columns[5] - digitcount(p->sched.bjf.arrival_time));
+        cprintf("%d", p->sched.sjf.arrival_time);
+        printspaces(columns[5] - digitcount(p->sched.sjf.arrival_time));
 
-        cprintf("%d", p->sched.bjf.priority);
-        printspaces(columns[6] - digitcount(p->sched.bjf.priority));
+        cprintf("%d", p->sched.sjf.priority);
+        printspaces(columns[6] - digitcount(p->sched.sjf.priority));
 
-        cprintf("%d", p->sched.bjf.process_size);
-        printspaces(columns[7] - digitcount(p->sched.bjf.process_size));
+        cprintf("%d", p->sched.sjf.process_size);
+        printspaces(columns[7] - digitcount(p->sched.sjf.process_size));
 
-        cprintf("%d", (int)p->sched.bjf.priority_ratio);
-        printspaces(columns[8] - digitcount((int)p->sched.bjf.priority_ratio));
+        cprintf("%d", (int)p->sched.sjf.priority_ratio);
+        printspaces(columns[8] - digitcount((int)p->sched.sjf.priority_ratio));
 
-        cprintf("%d", (int)p->sched.bjf.arrival_time_ratio);
-        printspaces(columns[9] - digitcount((int)p->sched.bjf.arrival_time_ratio));
+        cprintf("%d", (int)p->sched.sjf.arrival_time_ratio);
+        printspaces(columns[9] - digitcount((int)p->sched.sjf.arrival_time_ratio));
 
-        cprintf("%d", (int)p->sched.bjf.executed_cycle_ratio);
-        printspaces(columns[10] - digitcount((int)p->sched.bjf.executed_cycle_ratio));
+        cprintf("%d", (int)p->sched.sjf.executed_cycle_ratio);
+        printspaces(columns[10] - digitcount((int)p->sched.sjf.executed_cycle_ratio));
 
-        cprintf("%d", (int)p->sched.bjf.process_size_ratio);
-        printspaces(columns[11] - digitcount((int)p->sched.bjf.process_size_ratio));
+        cprintf("%d", (int)p->sched.sjf.process_size_ratio);
+        printspaces(columns[11] - digitcount((int)p->sched.sjf.process_size_ratio));
 
-        cprintf("%d", (int)procrank(p->sched.bjf));
+        // cprintf("%d", (int)procrank(p->sched.sjf.
         cprintf("\n");
     }
 
@@ -518,8 +525,8 @@ struct proc* first_come_first_serve(void)
     for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->state != RUNNABLE || p->sched.queue != FCFS)
             continue;
-        if (p->sched.bjf.arrival_time < earliest_arrival) {
-            earliest_arrival = p->sched.bjf.arrival_time;
+        if (p->sched.sjf.arrival_time < earliest_arrival) {
+            earliest_arrival = p->sched.sjf.arrival_time;
             selected = p;
         }
     }
@@ -544,7 +551,8 @@ struct proc* round_robin(struct proc* last_scheduled) {
     }
 }
 
-float procrank(struct bjfparams params) {
+// Update procrank to use sjfparams
+float procrank(struct sjfparams params) {
     return (params.priority * params.priority_ratio +
             params.arrival_time * params.arrival_time_ratio +
             params.executed_cycle * params.executed_cycle_ratio +
@@ -557,9 +565,9 @@ struct proc* best_job_first(void) {
 
     struct proc* p;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->state != RUNNABLE || p->sched.queue != BJF)
+        if (p->state != RUNNABLE || p->sched.queue != SJF)
             continue;
-        float rank = procrank(p->sched.bjf);
+        float rank = procrank(p->sched.sjf);
         if (next_p == 0 || rank < best_rank) {
             next_p = p;
             best_rank = rank;
@@ -595,9 +603,17 @@ struct proc* last_come_first_serve(void) {
 //   - swtch to start running that process
 //   - eventually that process transfers control
 //       via swtch back to the scheduler.
+#define ROUND_ROBIN_TIME_SLICE 50
+#define WEIGHT_ROUND_ROBIN 3
+#define WEIGHT_SJF 2
+#define WEIGHT_FCFS 1
+
 void scheduler(void) {
     struct cpu* c = mycpu();
     c->proc = 0;
+    c->queue_weights[0] = WEIGHT_ROUND_ROBIN;
+    c->queue_weights[1] = WEIGHT_SJF;
+    c->queue_weights[2] = WEIGHT_FCFS;
 
     for (;;) {
         sti(); // Enable interrupts on this processor.
@@ -623,34 +639,13 @@ void scheduler(void) {
             selected = 0;
             if (level == ROUND_ROBIN) {
                 // Level 0: Round Robin
-                for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-                    if (p->state == RUNNABLE && p->sched.queue == ROUND_ROBIN) {
-                        selected = p;
-                        break;
-                    }
-                }
-            } else if (level == LCFS) {
-                // Level 1: Last-Come, First-Served (assumed as LCFS)
-                int latest_time = -1;
-                for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-                    if (p->state == RUNNABLE && p->sched.queue == LCFS) {
-                        if (p->ctime > latest_time) {
-                            latest_time = p->ctime;
-                            selected = p;
-                        }
-                    }
-                }
+                selected = select_round_robin();
+            } else if (level == SJF) {
+                // Level 1: Shortest Job First
+                selected = select_sjf();
             } else if (level == FCFS) {
                 // Level 2: First-Come, First-Served
-                int earliest_arrival = 0x7fffffff;
-                for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-                    if (p->state == RUNNABLE && p->sched.queue == FCFS) {
-                        if (p->sched.bjf.arrival_time < earliest_arrival) {
-                            earliest_arrival = p->sched.bjf.arrival_time;
-                            selected = p;
-                        }
-                    }
-                }
+                selected = select_fcfs();
             }
 
             if (selected)
@@ -669,6 +664,63 @@ void scheduler(void) {
 
         release(&ptable.lock);
     }
+}
+
+struct proc* select_round_robin(void) {
+    static struct proc* last_scheduled = 0;
+    struct proc* p = last_scheduled ? last_scheduled + 1 : ptable.proc;
+    for (;; p++) {
+        if (p >= &ptable.proc[NPROC])
+            p = ptable.proc;
+        if (p->state == RUNNABLE && p->sched.queue == ROUND_ROBIN) {
+            last_scheduled = p;
+            return p;
+        }
+        if (p == last_scheduled)
+            return 0;
+    }
+}
+
+// Simple random number generator
+uint random_seed = 1;
+int random(void) {
+    random_seed = random_seed * 1664525 + 1013904223;
+    return random_seed;
+}
+
+struct proc* select_sjf(void) {
+    struct proc* selected = 0;
+    float best_rank = -1;
+    for (struct proc* p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state != RUNNABLE || p->sched.queue != SJF)
+            continue;
+        float rank = procrank(p->sched.sjf);
+        if (selected == 0 || rank < best_rank) {
+            selected = p;
+            best_rank = rank;
+        }
+    }
+    if (selected) {
+        int random_value = random() % 100;
+        if (random_value <= selected->sched.sjf.priority_ratio) {
+            return selected;
+        }
+    }
+    return selected;
+}
+
+struct proc* select_fcfs(void) {
+    struct proc* selected = 0;
+    int earliest_arrival = 0x7fffffff;
+    for (struct proc* p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state != RUNNABLE || p->sched.queue != FCFS)
+            continue;
+        if (p->sched.sjf.arrival_time < earliest_arrival) {
+            earliest_arrival = p->sched.sjf.arrival_time;
+            selected = p;
+        }
+    }
+    return selected;
 }
 
 // Enter scheduler.  Must hold only ptable.lock
@@ -935,12 +987,9 @@ int get_most_invoked(void){
     return -1;
 }
 
-
-
-void list_proceases(void)
-{
-      struct proc *p;
-
+// Fix list_proceases return type
+int list_proceases(void) {
+    struct proc *p;
     acquire(&ptable.lock);
     cprintf("PID    Syscall Count  Process Name\n");
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
@@ -949,14 +998,12 @@ void list_proceases(void)
         }
     }
     release(&ptable.lock);
-
     return 0;
 }
 
-
-void sort_syscalls()
-{
-      int pid;
+// Fix sort_syscalls return type
+int sort_syscalls(void) {
+    int pid;
     struct proc *p;
 
     if (argint(0, &pid) < 0)
@@ -965,18 +1012,17 @@ void sort_syscalls()
     acquire(&ptable.lock);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->pid == pid) {
-            int n = p->syscall_count;
             for (int i = 0; i < MAX_SYSCALLS; i++) {
-              if(p->syscalls[i] != 0){
-                cprintf("System Call ID: %d    Number of Calls: %d\n", i,p->syscalls[i]);
-              }
+                if(p->syscalls[i] != 0){
+                    cprintf("System Call ID: %d    Number of Calls: %d\n", i,p->syscalls[i]);
+                }
             }
             release(&ptable.lock);
             return 0;
         }
     }
     release(&ptable.lock);
-    return -1; 
+    return -1;
 }
 
 int bjsproc(int pid, float a, float b, float c, float d) {

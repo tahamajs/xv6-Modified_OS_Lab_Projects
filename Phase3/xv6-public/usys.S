@@ -9,7 +9,6 @@
     ret
 
 SYSCALL(fork)
-SYSCALL(set_scheduling_queue)
 SYSCALL(exit)
 SYSCALL(wait)
 SYSCALL(pipe)
@@ -34,17 +33,14 @@ SYSCALL(chqueue)
 SYSCALL(bjsproc)
 SYSCALL(bjssys)
 
-
 SYSCALL(create_palindrome)
 SYSCALL(move_file)
 SYSCALL(sort_syscalls)
 SYSCALL(get_most_invoked_syscall)
 SYSCALL(list_all_processes)
 
-SYSCALL(changequeue)
-SYSCALL(setbjfparams)
-SYSCALL(setsystembjf)
-SYSCALL(printprocs)
+SYSCALL(set_sjf_proc)
+SYSCALL(set_sjf_sys)
 
 SYSCALL(set_estimated_runtime)
 SYSCALL(change_queue)
