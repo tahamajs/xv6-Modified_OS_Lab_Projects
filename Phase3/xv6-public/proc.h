@@ -106,5 +106,6 @@ struct proc {
     int syscalls[100];
     int wait_time;   // Time the process has been waiting in RUNNABLE state
     int syscall_count ;
+    int consecutive_run; // Number of consecutive runs
 };
 

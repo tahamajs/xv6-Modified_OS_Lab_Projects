@@ -130,6 +130,14 @@ found:
     p->sched.sjf.executed_cycle_ratio = 1;
     p->sched.sjf.process_size_ratio = 1;
 
+    // Set default confidence level and burst time for SJF
+    p->sched.sjf.confidence_level = 50;
+    p->sched.sjf.burst_time = 2;
+
+    // Initialize consecutive run and wait time
+    p->consecutive_run = 0;
+    p->wait_time = 0;
+
     return p;
 }
 
@@ -319,6 +327,7 @@ int wait(void) {
                 p->name[0] = 0;
                 p->killed = 0;
                 p->state = UNUSED;
+                p->wait_time = 0; // Reset wait time when process is cleaned up
                 release(&ptable.lock);
                 return pid;
             }
@@ -459,7 +468,7 @@ int print_processes_infos(void) {
         [RUNNING] "running",
         [ZOMBIE] "zombie"};
 
-    static int columns[] = {16, 8, 12, 8, 8, 8, 8, 8, 8};
+    static int columns[] = {16, 8, 12, 8, 8, 8, 8, 8, 8, 8};
     cprintf(
         "Process_Name    PID     State     Queue   Wait time   Confidence  Burst Time  Consecutive Run    Arrival\n"
         "---------------------------------------------------------------------------------------------------------------\n");
@@ -487,17 +496,17 @@ int print_processes_infos(void) {
         cprintf("%d", p->sched.queue);
         printspaces(columns[3] - digitcount(p->sched.queue));
 
-        cprintf("%d", p->wait_time);
+        cprintf("%d        ", p->wait_time);
         printspaces(columns[4] - digitcount(p->wait_time));
 
         cprintf("%d", p->sched.sjf.confidence_level);
         printspaces(columns[5] - digitcount(p->sched.sjf.confidence_level));
 
-        cprintf("%d", p->sched.sjf.burst_time);
+        cprintf("%d     ", p->sched.sjf.burst_time);
         printspaces(columns[6] - digitcount(p->sched.sjf.burst_time));
 
-        cprintf("%d", p->sched.sjf.executed_cycle);
-        printspaces(columns[7] - digitcount(p->sched.sjf.executed_cycle));
+        cprintf("%d         ", p->consecutive_run);
+        printspaces(columns[7] - digitcount(p->consecutive_run));
 
         cprintf("%d", p->sched.sjf.arrival_time);
         printspaces(columns[8] - digitcount(p->sched.sjf.arrival_time));
@@ -610,6 +619,8 @@ void scheduler(void) {
     c->queue_weights[0] = WEIGHT_ROUND_ROBIN;
     c->queue_weights[1] = WEIGHT_SJF;
     c->queue_weights[2] = WEIGHT_FCFS;
+    
+    struct proc* last_proc = 0;  // Track the last process that ran
 
     for (;;) {
         sti(); // Enable interrupts on this processor.
@@ -623,9 +634,8 @@ void scheduler(void) {
                 p->wait_time++;
                 if (p->wait_time > MAX_AGE && p->sched.queue > ROUND_ROBIN) {
                     cprintf("Process %d aged from queue %d to queue %d\n", p->pid, p->sched.queue, p->sched.queue - 1);
-
                     p->sched.queue--;
-                    p->wait_time = 0;
+                    // p->wait_time = 0;
                 }
             }
         }
@@ -636,13 +646,10 @@ void scheduler(void) {
         for (level = ROUND_ROBIN; level <= FCFS; level++) {
             selected = 0;
             if (level == ROUND_ROBIN) {
-                // Level 0: Round Robin
                 selected = select_round_robin();
             } else if (level == SJF) {
-                // Level 1: Shortest Job First
                 selected = select_sjf();
             } else if (level == FCFS) {
-                // Level 2: First-Come, First-Served
                 selected = select_fcfs();
             }
 
@@ -651,10 +658,18 @@ void scheduler(void) {
         }
 
         if (selected != 0) {
+            // Update consecutive run counter
+            if (last_proc == selected) {
+                selected->consecutive_run++;
+            } else {
+                selected->consecutive_run = 1;
+            }
+            last_proc = selected;
+
             c->proc = selected;
             switchuvm(selected);
             selected->state = RUNNING;
-            selected->wait_time = 0;
+            selected->wait_time = 0; // Reset wait time when selected to run
             swtch(&(c->scheduler), selected->context);
             switchkvm();
             c->proc = 0;
@@ -808,6 +823,7 @@ void sleep(void* chan, struct spinlock* lk) {
     // Go to sleep.
     p->chan = chan;
     p->state = SLEEPING;
+    p->wait_time = 0; // Reset wait time when process goes to sleep
 
     sched();
 
@@ -852,8 +868,10 @@ int kill(int pid) {
         if (p->pid == pid) {
             p->killed = 1;
             // Wake process from sleep if necessary.
-            if (p->state == SLEEPING)
+            if (p->state == SLEEPING) {
                 p->state = RUNNABLE;
+                p->wait_time = 0; // Reset wait time when process is woken up
+            }
             release(&ptable.lock);
             return 0;
         }
