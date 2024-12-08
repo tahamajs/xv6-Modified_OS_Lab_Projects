@@ -34,9 +34,12 @@
 #define SYS_set_sjf_sys             33
 #define SYS_chqueue                 34
 #define SYS_bjsproc                 35
-#define SYS_bjssys                   36
+#define SYS_bjssys                  36
+#define SYS_user_program            37
 
 #define MAX_SYSCALLS                  100
+
+// int user_program(void);
 
 // int sys_set_scheduling_queue(void);
 // int sys_print_processes_info(void);

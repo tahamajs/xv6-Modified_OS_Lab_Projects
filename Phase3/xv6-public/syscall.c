@@ -90,6 +90,7 @@ extern int sys_bjssys(void);
 extern int sys_changequeue(void);
 extern int sys_set_sjf_proc(void);
 extern int sys_set_sjf_sys(void);
+extern int sys_user_program(void);
 
 
 
@@ -177,6 +178,7 @@ static int (*syscalls[])(void) = {
     [SYS_set_sjf_proc]            sys_set_sjf_proc,
     [SYS_set_sjf_sys]             sys_set_sjf_sys,
     [SYS_change_queue]            sys_change_queue,
+    // [SYS_user_program]            sys_user_program,
 };
 
 

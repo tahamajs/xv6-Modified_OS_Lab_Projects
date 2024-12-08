@@ -1,6 +1,5 @@
 #pragma once
 
-
 struct buf;
 struct context;
 struct file;
@@ -20,7 +19,6 @@ void binit(void);
 struct buf* bread(uint, uint);
 void brelse(struct buf*);
 void bwrite(struct buf*);
-
 
 // console.c
 void consoleinit(void);
@@ -63,11 +61,11 @@ int writei(struct inode*, char*, uint, uint);
 void ideinit(void);
 void ideintr(void);
 void iderw(struct buf*);
+
 // ioapic.c
 void ioapicenable(int irq, int cpu);
 extern uchar ioapicid;
 void ioapicinit(void);
-
 
 // kalloc.c
 char* kalloc(void);
@@ -86,8 +84,6 @@ void lapiceoi(void);
 void lapicinit(void);
 void lapicstartap(uchar, uint);
 void microdelay(int);
-// void initprioritylock(struct prioritylock*, char*);
-
 
 // log.c
 void initlog(int dev);
@@ -109,9 +105,9 @@ void pipeclose(struct pipe*, int);
 int piperead(struct pipe*, char*, int);
 int pipewrite(struct pipe*, char*, int);
 
-//  proc.c
+// proc.c
 int cpuid(void);
-void exit(void);
+void exit(void) __attribute__((noreturn));
 int fork(void);
 int growproc(int);
 int kill(int);
@@ -135,12 +131,13 @@ int init_queue(int);
 void aging(int);
 int set_bjs_proc(int, float, float, float, float);
 int set_bjs_sys(float, float, float, float);
-// float procrank(struct sjfparams);
 int print_processes_infos(void);
 int pacquire(void);
 int prelease(void);
 int pqueue(void);
 int nsyscalls(void);
+int user_program(void);
+
 // swtch.S
 void swtch(struct context**, struct context*);
 
@@ -152,7 +149,6 @@ void initlock(struct spinlock*, char*);
 void release(struct spinlock*);
 void pushcli(void);
 void popcli(void);
-
 
 // sleeplock.c
 void acquiresleep(struct sleeplock*);
@@ -170,13 +166,12 @@ int isholdingpriority(struct prioritylock*);
 
 // string.c
 int memcmp(const void*, const void*, uint);
-void* memmove(void*, const void*, uint);
+void* memmove(void*, const void*, int);
 void* memset(void*, int, uint);
 char* safestrcpy(char*, const char*, int);
 int strlen(const char*);
 int strncmp(const char*, const char*, uint);
 char* strncpy(char*, const char*, int);
-
 
 // syscall.c
 int argint(int, int*);
@@ -188,7 +183,6 @@ int fetchstr(uint, char**);
 int fetchfloat(uint, float*);
 void syscall(void);
 void getnsyscall(void);
-
 
 // timer.c
 void timerinit(void);
@@ -223,6 +217,7 @@ void clearpteu(pde_t *pgdir, char *uva);
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 #define MAX_SYSCALLS 100
 extern int syscall_counts[MAX_SYSCALLS];
+
 // SJF priority
 enum schedpriority {
     HIGH = 1,
@@ -243,6 +238,5 @@ struct sjfparams {
     float arrival_time_ratio;
     float process_size_ratio;
 };
-// float procrank(struct sjfparams);
 
 float procrank(struct sjfparams params);

@@ -171,6 +171,7 @@ mkfs: mkfs.c fs.h
 
 UPROGS=\
 	_cat\
+	_test_scheduler\
 	_echo\
 	_forktest\
 	_grep\
@@ -194,6 +195,7 @@ UPROGS=\
     _test_get_most_invoked\
     _test_list_processes\
 	_test_syscall_gdb\
+	_user_program\
 
 
 fs.img: mkfs README $(UPROGS)

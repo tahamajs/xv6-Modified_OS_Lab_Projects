@@ -627,6 +627,8 @@ void scheduler(void) {
             if (p->state == RUNNABLE) {
                 p->wait_time++;
                 if (p->wait_time > MAX_AGE && p->sched.queue > ROUND_ROBIN) {
+                    cprintf("Process %d aged from queue %d to queue %d\n", p->pid, p->sched.queue, p->sched.queue - 1);
+
                     p->sched.queue--;
                     p->wait_time = 0;
                 }
