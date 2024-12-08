@@ -117,7 +117,6 @@ void pinit(void);
 void procdump(void);
 void scheduler(void) __attribute__((noreturn));
 void sched(void);
-void setproc(struct proc*);
 void sleep(void*, struct spinlock*);
 void userinit(void);
 int wait(void);
@@ -129,8 +128,6 @@ int droot(int);
 int change_queue(int, int);
 int init_queue(int);
 void aging(int);
-int set_bjs_proc(int, float, float, float, float);
-int set_bjs_sys(float, float, float, float);
 int print_processes_infos(void);
 int pacquire(void);
 int prelease(void);
@@ -236,10 +233,7 @@ struct sjfparams {
     int burst_time;
     int confidence_level;
 
-    float priority_ratio;
-    float executed_cycle_ratio;
-    float arrival_time_ratio;
-    float process_size_ratio;
+    int priority_ratio;
 };
 
 // float procrank(struct sjfparams params);

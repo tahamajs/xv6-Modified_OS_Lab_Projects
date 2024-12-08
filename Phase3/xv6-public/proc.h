@@ -57,9 +57,8 @@ enum procstate { UNUSED,
 enum schedqueue {
     UNSET,
     ROUND_ROBIN,
-    LCFS,
-    FCFS,
-    SJF
+    SJF,
+    FCFS
 };
 
 // // sjf parameters
@@ -82,6 +81,7 @@ struct schedparams {
     enum schedqueue queue;
     struct sjfparams sjf;
     int last_exec;
+    int last_termination;
     int executed_cycle; // Add this line
 };
 
