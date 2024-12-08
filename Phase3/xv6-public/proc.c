@@ -609,6 +609,7 @@ struct proc* last_come_first_serve(void) {
 //   - eventually that process transfers control
 //       via swtch back to the scheduler.
 #define ROUND_ROBIN_TIME_SLICE 50
+#define ROUND_ROBIN_TICKS 10
 #define WEIGHT_ROUND_ROBIN 3
 #define WEIGHT_SJF 2
 #define WEIGHT_FCFS 1
@@ -673,26 +674,37 @@ void scheduler(void) {
     }
 }
 
-struct proc* select_round_robin(void) {
-    static struct proc* last_scheduled = 0;
-    struct proc* p = last_scheduled ? last_scheduled + 1 : ptable.proc;
-    for (;; p++) {
-        if (p >= &ptable.proc[NPROC])
-            p = ptable.proc;
-        if (p->state == RUNNABLE && p->sched.queue == ROUND_ROBIN) {
-            last_scheduled = p;
-            return p;
-        }
-        if (p == last_scheduled)
-            return 0;
-    }
-}
 
 // Simple random number generator
 uint random_seed = 1;
 int random(void) {
     random_seed = random_seed * 1664525 + 1013904223;
     return random_seed;
+}
+
+
+
+struct proc* select_round_robin(void) {
+    static struct proc* last_scheduled = 0;
+    static int ticks = 0;
+    struct proc* p = last_scheduled ? last_scheduled + 1 : ptable.proc;
+    for (;; p++) {
+        if (p >= &ptable.proc[NPROC])
+            p = ptable.proc;
+        if (p->state == RUNNABLE && p->sched.queue == ROUND_ROBIN) {
+            if (ticks < ROUND_ROBIN_TICKS) {
+                ticks++;
+                last_scheduled = p;
+                return p;
+            } else {
+                ticks = 0;
+                last_scheduled = p;
+                return p;
+            }
+        }
+        if (p == last_scheduled)
+            return 0;
+    }
 }
 
 struct proc* select_sjf(void) {
