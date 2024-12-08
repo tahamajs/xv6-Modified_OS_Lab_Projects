@@ -5,7 +5,6 @@
 #include "fcntl.h"
 // #include "proc.h"
 
-// Custom string formatting function
 void format_string(char* buffer, const char* format, ...) {
     char* str = buffer;
     const char* fmt = format;
@@ -68,7 +67,7 @@ void write_to_file(int fd, char* str) {
 
 char buffer[1024];  // Buffer for formatting strings
 
-// Modified test functions with file output
+// Test aging mechanism
 void test_aging(int log_fd) {
     printf(1, "\n=== Testing Aging Mechanism ===\n");
     format_string(buffer, "\n=== Testing Aging Mechanism ===\n");
@@ -79,14 +78,12 @@ void test_aging(int log_fd) {
     if (pid < 0) {
         printf(1, "Fork failed\n");
         format_string(buffer, "Fork failed\n");
-        write_to_file(log_fd, buffer);
         exit();
     }
 
     if (pid == 0) {
         change_queue(getpid(), 2);
         format_string(buffer, "Child process (PID: %d) started in FCFS queue\n", getpid());
-        write_to_file(log_fd, buffer);
         
         for (int i = 0; i < 10; i++) {
             format_string(buffer, "Child process (PID: %d) iteration %d\n", getpid(), i);
@@ -104,23 +101,22 @@ void test_aging(int log_fd) {
     }
 }
 
+// Test different scheduling queues
 void test_scheduling_queues(int log_fd) {
     format_string(buffer, "\n=== Testing Different Scheduling Queues ===\n");
     write_to_file(log_fd, buffer);
     
-    int pids[3];
+    int pids[12];  // Increase the array size to accommodate more processes
     
     // Round Robin Process
     if ((pids[0] = fork()) == 0) {
         change_queue(getpid(), 0);
         format_string(buffer, "RR Process (PID: %d) started\n", getpid());
-        write_to_file(log_fd, buffer);
         
         for (int i = 0; i < 5; i++) {
             format_string(buffer, "RR Process (PID: %d) iteration %d\n", getpid(), i);
             write_to_file(log_fd, buffer);
-            cpu_bound_task(2);
-            sleep(50);
+            cpu_bound_task(200);
         }
         exit();
     }
@@ -128,10 +124,8 @@ void test_scheduling_queues(int log_fd) {
     // SJF Process
     if ((pids[1] = fork()) == 0) {
         change_queue(getpid(), 1);
-        // set_sjf_proc(getpid(), 1, 2, 3, 4);
         set_SJF_params(getpid(), 100, 80);
         format_string(buffer, "SJF Process (PID: %d) started\n", getpid());
-        write_to_file(log_fd, buffer);
         
         for (int i = 0; i < 5; i++) {
             format_string(buffer, "SJF Process (PID: %d) iteration %d\n", getpid(), i);
@@ -142,14 +136,142 @@ void test_scheduling_queues(int log_fd) {
         exit();
     }
     
-    // FCFS Process with detailed logging
+    // FCFS Process
     if ((pids[2] = fork()) == 0) {
         change_queue(getpid(), 2);
         format_string(buffer, "FCFS Process (PID: %d) started\n", getpid());
-        write_to_file(log_fd, buffer);
         
         for (int i = 0; i < 5; i++) {
             format_string(buffer, "FCFS Process (PID: %d) iteration %d\n", getpid(), i);
+            write_to_file(log_fd, buffer);
+            cpu_bound_task(1);
+            sleep(50);
+        }
+        exit();
+    }
+    
+    // Additional Round Robin Process
+    if ((pids[3] = fork()) == 0) {
+        change_queue(getpid(), 0);
+        format_string(buffer, "Additional RR Process (PID: %d) started\n", getpid());
+        
+        for (int i = 0; i < 5; i++) {
+            format_string(buffer, "Additional RR Process (PID: %d) iteration %d\n", getpid(), i);
+            write_to_file(log_fd, buffer);
+            cpu_bound_task(2);
+            sleep(50);
+        }
+        exit();
+    }
+    
+    // Additional SJF Process
+    if ((pids[4] = fork()) == 0) {
+        change_queue(getpid(), 1);
+        set_SJF_params(getpid(), 100, 80);
+        format_string(buffer, "Additional SJF Process (PID: %d) started\n", getpid());
+        
+        for (int i = 0; i < 5; i++) {
+            format_string(buffer, "Additional SJF Process (PID: %d) iteration %d\n", getpid(), i);
+            write_to_file(log_fd, buffer);
+            cpu_bound_task(3);
+            sleep(50);
+        }
+        exit();
+    }
+    
+    // Additional FCFS Process
+    if ((pids[5] = fork()) == 0) {
+        change_queue(getpid(), 2);
+        format_string(buffer, "Additional FCFS Process (PID: %d) started\n", getpid());
+        
+        for (int i = 0; i < 5; i++) {
+            format_string(buffer, "Additional FCFS Process (PID: %d) iteration %d\n", getpid(), i);
+            write_to_file(log_fd, buffer);
+            cpu_bound_task(1);
+            sleep(50);
+        }
+        exit();
+    }
+    
+    // Another Round Robin Process
+    if ((pids[6] = fork()) == 0) {
+        change_queue(getpid(), 0);
+        format_string(buffer, "Another RR Process (PID: %d) started\n", getpid());
+        
+        for (int i = 0; i < 5; i++) {
+            format_string(buffer, "Another RR Process (PID: %d) iteration %d\n", getpid(), i);
+            write_to_file(log_fd, buffer);
+            cpu_bound_task(2);
+            sleep(50);
+        }
+        exit();
+    }
+    
+    // Another SJF Process
+    if ((pids[7] = fork()) == 0) {
+        change_queue(getpid(), 1);
+        set_SJF_params(getpid(), 100, 80);
+        format_string(buffer, "Another SJF Process (PID: %d) started\n", getpid());
+        
+        for (int i = 0; i < 5; i++) {
+            format_string(buffer, "Another SJF Process (PID: %d) iteration %d\n", getpid(), i);
+            write_to_file(log_fd, buffer);
+            cpu_bound_task(3);
+            sleep(50);
+        }
+        exit();
+    }
+    
+    // Another FCFS Process
+    if ((pids[8] = fork()) == 0) {
+        change_queue(getpid(), 2);
+        format_string(buffer, "Another FCFS Process (PID: %d) started\n", getpid());
+        
+        for (int i = 0; i < 5; i++) {
+            format_string(buffer, "Another FCFS Process (PID: %d) iteration %d\n", getpid(), i);
+            write_to_file(log_fd, buffer);
+            cpu_bound_task(1);
+            sleep(50);
+        }
+        exit();
+    }
+    
+    // Yet Another Round Robin Process
+    if ((pids[9] = fork()) == 0) {
+        change_queue(getpid(), 0);
+        format_string(buffer, "Yet Another RR Process (PID: %d) started\n", getpid());
+        
+        for (int i = 0; i < 5; i++) {
+            format_string(buffer, "Yet Another RR Process (PID: %d) iteration %d\n", getpid(), i);
+            write_to_file(log_fd, buffer);
+            cpu_bound_task(2);
+            sleep(50);
+        }
+        exit();
+    }
+    
+    // Yet Another SJF Process
+    if ((pids[10] = fork()) == 0) {
+        change_queue(getpid(), 1);
+        set_SJF_params(getpid(), 100, 80);
+        format_string(buffer, "Yet Another SJF Process (PID: %d) started\n", getpid());
+        
+        for (int i = 0; i < 5; i++) {
+            format_string(buffer, "Yet Another SJF Process (PID: %d) iteration %d\n", getpid(), i);
+            write_to_file(log_fd, buffer);
+            cpu_bound_task(3);
+            sleep(50);
+        }
+        exit();
+    }
+    
+    // Yet Another FCFS Process
+    if ((pids[11] = fork()) == 0) {
+        change_queue(getpid(), 2);
+        format_string(buffer, "Yet Another FCFS Process (PID: %d) started\n", getpid());
+        
+        for (int i = 0; i < 5; i++) {
+            format_string(buffer, "Yet Another FCFS Process (PID: %d) iteration %d\n", getpid(), i);
             write_to_file(log_fd, buffer);
             cpu_bound_task(1);
             sleep(50);
@@ -168,12 +290,12 @@ void test_scheduling_queues(int log_fd) {
         sleep(100);
     }
     
-    // Wait for all children
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 12; i++) {
         wait();
     }
 }
 
+// Test queue changes
 void test_queue_changes(int log_fd) {
     format_string(buffer, "\n=== Testing Queue Changes ===\n");
     write_to_file(log_fd, buffer);
@@ -208,6 +330,7 @@ void test_queue_changes(int log_fd) {
     }
 }
 
+// Test set_SJF_params system call
 void test_set_SJF_params(int log_fd) {
     format_string(buffer, "\n=== Testing set_SJF_params System Call ===\n");
     write_to_file(log_fd, buffer);

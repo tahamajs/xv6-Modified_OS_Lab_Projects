@@ -327,7 +327,7 @@ int wait(void) {
                 p->name[0] = 0;
                 p->killed = 0;
                 p->state = UNUSED;
-                p->wait_time = 0; // Reset wait time when process is cleaned up
+                // p->wait_time = 0; // Reset wait time when process is cleaned up
                 release(&ptable.lock);
                 return pid;
             }
@@ -608,7 +608,7 @@ struct proc* last_come_first_serve(void) {
 //   - eventually that process transfers control
 //       via swtch back to the scheduler.
 #define ROUND_ROBIN_TIME_SLICE 50
-#define ROUND_ROBIN_TICKS 10
+#define ROUND_ROBIN_TICKS 5
 #define WEIGHT_ROUND_ROBIN 3
 #define WEIGHT_SJF 2
 #define WEIGHT_FCFS 1
@@ -635,7 +635,7 @@ void scheduler(void) {
                 if (p->wait_time > MAX_AGE && p->sched.queue > ROUND_ROBIN) {
                     cprintf("Process %d aged from queue %d to queue %d\n", p->pid, p->sched.queue, p->sched.queue - 1);
                     p->sched.queue--;
-                    // p->wait_time = 0;
+                    p->wait_time = 0;
                 }
             }
         }
@@ -698,7 +698,7 @@ struct proc* select_round_robin(void) {
             p = ptable.proc;
         if (p->state == RUNNABLE && p->sched.queue == ROUND_ROBIN) {
             if (ticks < ROUND_ROBIN_TICKS) {
-                ticks++;
+                // ticks++;
                 last_scheduled = p;
                 return p;
             } else {
@@ -823,7 +823,7 @@ void sleep(void* chan, struct spinlock* lk) {
     // Go to sleep.
     p->chan = chan;
     p->state = SLEEPING;
-    p->wait_time = 0; // Reset wait time when process goes to sleep
+    // p->wait_time = 0; // Reset wait time when process goes to sleep
 
     sched();
 
@@ -870,7 +870,7 @@ int kill(int pid) {
             // Wake process from sleep if necessary.
             if (p->state == SLEEPING) {
                 p->state = RUNNABLE;
-                p->wait_time = 0; // Reset wait time when process is woken up
+                // p->wait_time = 0; // Reset wait time when process is woken up
             }
             release(&ptable.lock);
             return 0;

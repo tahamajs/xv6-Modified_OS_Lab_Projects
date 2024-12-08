@@ -15,7 +15,7 @@ extern uint vectors[]; // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
 
-#define ROUND_ROBIN_TIME_SLICE 50
+#define ROUND_ROBIN_TIME_SLICE 5
 
 void tvinit(void) {
     int i;
@@ -55,10 +55,10 @@ void trap(struct trapframe* tf) {
         struct proc *p = myproc();
         if (p && p->state == RUNNING && p->sched.queue == ROUND_ROBIN) {
             p->sched.sjf.executed_cycle++;
-            if (p->sched.sjf.executed_cycle >= ROUND_ROBIN_TIME_SLICE) {
-                p->sched.sjf.executed_cycle = 0;
-                yield();
-            }
+            // if (p->sched.sjf.executed_cycle >= ROUND_ROBIN_TIME_SLICE) {
+            //     p->sched.sjf.executed_cycle = 0;
+            //     yield();
+            // }
         }
         lapiceoi();
         break;
