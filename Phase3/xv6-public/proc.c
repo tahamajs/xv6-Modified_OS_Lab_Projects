@@ -336,17 +336,17 @@ int wait(void) {
 }
 void aging(int curr_time) {
     struct proc* p;
-
-
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->state == RUNNABLE && p->sched.queue != ROUND_ROBIN) {
+        if (p->state == RUNNABLE && p->sched.queue > ROUND_ROBIN) {
             if (curr_time - p->sched.last_exec > MAX_AGE) {
-                cprintf("Process %d promoted to ROUND_ROBIN due to aging\n", p->pid);
-                change_queue(p->pid, ROUND_ROBIN);
+                int old_queue = p->sched.queue;
+                p->sched.queue--;
+                p->wait_time = 0;
+                cprintf("Process %d promoted from queue %d to queue %d\n", 
+                        p->pid, old_queue, p->sched.queue);
             }
         }
     }
-
 }
 
 int init_queue(int pid) {
@@ -357,7 +357,7 @@ int init_queue(int pid) {
     if (pid == 1 || pid == 2)
         queue = ROUND_ROBIN;
     else if (pid > 2)
-        queue = FCFS;
+        queue = FCFS;  // Default queue (level 3)
     else
         return -1;
 
@@ -365,11 +365,12 @@ int init_queue(int pid) {
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->pid == pid) {
             p->sched.queue = queue;
+            p->wait_time = 0;
+            p->sched.last_exec = ticks;
             break;
         }
     }
     release(&ptable.lock);
-
     return 0;
 }
 
@@ -1038,4 +1039,13 @@ int bjssys(float a, float b, float c, float d) {
 int set_estimated_runtime(int pid, int runtime, int confidence) {
     // Implement the function logic here
     return 0;
+}
+
+int exec(char *path, char **argv) {
+    // ...existing code...
+    struct proc *curproc = myproc();
+    if (curproc != initproc && strcmp(curproc->name, "sh") != 0) {
+        change_queue(curproc->pid, FCFS);
+    }
+    // ...existing code...
 }
