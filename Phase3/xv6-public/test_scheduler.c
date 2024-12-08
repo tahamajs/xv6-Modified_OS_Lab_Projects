@@ -1,105 +1,237 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
+#include "fcntl.h"
 
-// Heavy computation function to keep CPU busy
-long compute_factorial(int n) {
-    long result = 1;
-    for(int i = 1; i <= n; i++) {
-        result *= i;
-        // Add some more computations to make it heavier
-        for(int j = 0; j < 1000; j++) {
-            result = (result * 7919) % 999983; // Large prime numbers
-        }
-    }
-    return result;
-}
-
-// Matrix multiplication to create CPU load
-void matrix_multiply(int size) {
-    int matrix1[20][20], matrix2[20][20], result[20][20];
+// Custom string formatting function
+void format_string(char* buffer, const char* format, ...) {
+    char* str = buffer;
+    const char* fmt = format;
+    int i;
+    char num_buffer[16];
     
-    // Initialize matrices
-    for(int i = 0; i < size; i++) {
-        for(int j = 0; j < size; j++) {
-            matrix1[i][j] = i + j;
-            matrix2[i][j] = i * j;
-        }
-    }
-    
-    // Multiply matrices
-    for(int i = 0; i < size; i++) {
-        for(int j = 0; j < size; j++) {
-            result[i][j] = 0;
-            for(int k = 0; k < size; k++) {
-                result[i][j] += matrix1[i][k] * matrix2[k][j];
+    while (*fmt) {
+        if (*fmt == '%') {
+            fmt++;
+            switch (*fmt) {
+                case 'd':
+                    i = *(int*)(&format + 1);
+                    int n = i;
+                    int idx = 0;
+                    // Convert number to string
+                    if (n == 0) {
+                        num_buffer[idx++] = '0';
+                    } else {
+                        while (n > 0) {
+                            num_buffer[idx++] = '0' + (n % 10);
+                            n /= 10;
+                        }
+                    }
+                    // Copy reversed
+                    while (idx > 0) {
+                        *str++ = num_buffer[--idx];
+                    }
+                    break;
+                case 's':
+                    char* s = *(char**)(&format + 1);
+                    while (*s) {
+                        *str++ = *s++;
+                    }
+                    break;
+                default:
+                    *str++ = *fmt;
             }
+        } else {
+            *str++ = *fmt;
+        }
+        fmt++;
+    }
+    *str = '\0';
+}
+
+// Function to create CPU load
+void cpu_bound_task(int intensity) {
+    int i, j, dummy = 0;
+    for (i = 0; i < intensity * 100000; i++) {
+        for (j = 0; j < 1000; j++) {
+            dummy += (dummy + i) % (j + 1);
         }
     }
 }
 
-void test_different_queues() {
+// Function to write to file
+void write_to_file(int fd, char* str) {
+    write(fd, str, strlen(str));
+}
+
+char buffer[1024];  // Buffer for formatting strings
+
+// Modified test functions with file output
+void test_aging(int log_fd) {
+    printf(1, "\n=== Testing Aging Mechanism ===\n");
+    format_string(buffer, "\n=== Testing Aging Mechanism ===\n");
+    write_to_file(log_fd, buffer);
+    
     int pid = fork();
     
-    if(pid < 0) {
+    if (pid < 0) {
         printf(1, "Fork failed\n");
+        format_string(buffer, "Fork failed\n");
+        write_to_file(log_fd, buffer);
         exit();
     }
+
+    if (pid == 0) {
+        change_queue(getpid(), 2);
+        format_string(buffer, "Child process (PID: %d) started in FCFS queue\n", getpid());
+        write_to_file(log_fd, buffer);
+        
+        for (int i = 0; i < 10; i++) {
+            format_string(buffer, "Child process (PID: %d) iteration %d\n", getpid(), i);
+            write_to_file(log_fd, buffer);
+            cpu_bound_task(5);
+            
+            // Capture process info in file
+            write_to_file(log_fd, "\n--- Process Status ---\n");
+            print_processes_info();
+            sleep(100);
+        }
+        exit();
+    } else {
+        wait();
+    }
+}
+
+void test_scheduling_queues(int log_fd) {
+    format_string(buffer, "\n=== Testing Different Scheduling Queues ===\n");
+    write_to_file(log_fd, buffer);
     
-    if(pid == 0) {  // Child process 1 - ROUND_ROBIN
-        change_queue(getpid(), 0); // Set to ROUND_ROBIN queue
-        printf(1, "Child 1 (PID: %d) running in ROUND_ROBIN queue\n", getpid());
-        for(int i = 0; i < 5; i++) {
-            compute_factorial(20);
-            matrix_multiply(10);
+    int pids[3];
+    
+    // Round Robin Process
+    if ((pids[0] = fork()) == 0) {
+        change_queue(getpid(), 0);
+        format_string(buffer, "RR Process (PID: %d) started\n", getpid());
+        write_to_file(log_fd, buffer);
+        
+        for (int i = 0; i < 5; i++) {
+            format_string(buffer, "RR Process (PID: %d) iteration %d\n", getpid(), i);
+            write_to_file(log_fd, buffer);
+            cpu_bound_task(2);
+            sleep(50);
         }
         exit();
     }
     
-    pid = fork();
-    if(pid == 0) {  // Child process 2 - SJF
-        change_queue(getpid(), 1); // Set to SJF queue
-        printf(1, "Child 2 (PID: %d) running in SJF queue\n", getpid());
-        // Set SJF parameters
+    // SJF Process
+    if ((pids[1] = fork()) == 0) {
+        change_queue(getpid(), 1);
         set_sjf_proc(getpid(), 1.0, 0.5, 0.3, 0.2);
-        for(int i = 0; i < 3; i++) {
-            compute_factorial(15);
-            matrix_multiply(8);
+        format_string(buffer, "SJF Process (PID: %d) started\n", getpid());
+        write_to_file(log_fd, buffer);
+        
+        for (int i = 0; i < 5; i++) {
+            format_string(buffer, "SJF Process (PID: %d) iteration %d\n", getpid(), i);
+            write_to_file(log_fd, buffer);
+            cpu_bound_task(3);
+            sleep(50);
         }
         exit();
     }
     
-    pid = fork();
-    if(pid == 0) {  // Child process 3 - FCFS
-        change_queue(getpid(), 2); // Set to FCFS queue
-        printf(1, "Child 3 (PID: %d) running in FCFS queue\n", getpid());
-        for(int i = 0; i < 4; i++) {
-            compute_factorial(18);
-            matrix_multiply(12);
+    // FCFS Process with detailed logging
+    if ((pids[2] = fork()) == 0) {
+        change_queue(getpid(), 2);
+        format_string(buffer, "FCFS Process (PID: %d) started\n", getpid());
+        write_to_file(log_fd, buffer);
+        
+        for (int i = 0; i < 5; i++) {
+            format_string(buffer, "FCFS Process (PID: %d) iteration %d\n", getpid(), i);
+            write_to_file(log_fd, buffer);
+            cpu_bound_task(1);
+            sleep(50);
         }
         exit();
     }
     
-    // Parent process
-    printf(1, "Parent process (PID: %d) waiting for children\n", getpid());
+    // Parent monitoring with file logging
+    format_string(buffer, "Parent process monitoring started\n");
+    write_to_file(log_fd, buffer);
     
-    // Print process info periodically
-    for(int i = 0; i < 3; i++) {
+    for (int i = 0; i < 10; i++) {
+        format_string(buffer, "\n--- System Status at iteration %d ---\n", i);
+        write_to_file(log_fd, buffer);
         print_processes_info();
-        compute_factorial(10); // Add some delay between prints
+        sleep(100);
     }
     
     // Wait for all children
-    for(int i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++) {
         wait();
     }
-    
-    printf(1, "All child processes completed\n");
-    print_processes_info();
 }
 
-int main() {
-    printf(1, "Starting scheduler test...\n");
-    test_different_queues();
+void test_queue_changes(int log_fd) {
+    format_string(buffer, "\n=== Testing Queue Changes ===\n");
+    write_to_file(log_fd, buffer);
+    
+    int pid = fork();
+    
+    if (pid == 0) {
+        // Log queue changes
+        change_queue(getpid(), 2);
+        format_string(buffer, "Process (PID: %d) starting in FCFS queue\n", getpid());
+        write_to_file(log_fd, buffer);
+        print_processes_info();
+        
+        sleep(100);
+        
+        change_queue(getpid(), 1);
+        format_string(buffer, "Process (PID: %d) changed to SJF queue\n", getpid());
+        write_to_file(log_fd, buffer);
+        print_processes_info();
+        
+        sleep(100);
+        
+        change_queue(getpid(), 0);
+        format_string(buffer, "Process (PID: %d) changed to Round Robin queue\n", getpid());
+        write_to_file(log_fd, buffer);
+        print_processes_info();
+        
+        cpu_bound_task(2);
+        exit();
+    } else {
+        wait();
+    }
+}
+
+int main(void) {
+    // Create log file with timestamp
+    char filename[32];
+    format_string(filename, "scheduler_test_%d.log", uptime());
+    int log_fd = open(filename, O_CREATE | O_WRONLY);
+    
+    if (log_fd < 0) {
+        printf(1, "Failed to create log file\n");
+        exit();
+    }
+    
+    printf(1, "Starting Comprehensive Scheduler Testing...\n");
+    printf(1, "Results will be saved to: %s\n", filename);
+    
+    write_to_file(log_fd, "=== Scheduler Test Results ===\n");
+    write_to_file(log_fd, "Starting tests...\n\n");
+    
+    // Run tests with file logging
+    test_queue_changes(log_fd);
+    test_scheduling_queues(log_fd);
+    test_aging(log_fd);
+    
+    // Write completion message
+    write_to_file(log_fd, "\nAll tests completed.\n");
+    
+    // Close log file
+    close(log_fd);
+    printf(1, "\nTests completed. Results saved to %s\n", filename);
     exit();
 }
