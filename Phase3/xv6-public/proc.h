@@ -111,6 +111,9 @@ struct proc {
     int syscalls[100];
     int wait_time;   // Time the process has been waiting in RUNNABLE state
     int syscall_count ;
+    // New attributes for SJF-based scheduling 
+    int burst_time; // Proposed execution time 
+    int confidence_level; // Confidence level (0-99)
 };
 
 // Process memory is laid out contiguously, low addresses first:

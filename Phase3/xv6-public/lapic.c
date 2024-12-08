@@ -66,7 +66,7 @@ lapicinit(void)
   // TICR would be calibrated using an external time source.
   lapicw(TDCR, X1);
   lapicw(TIMER, PERIODIC | (T_IRQ0 + IRQ_TIMER));
-  lapicw(TICR, 10000000);
+  lapicw(TICR, 50000000);
 
   // Disable logical interrupt lines.
   lapicw(LINT0, MASKED);
@@ -226,4 +226,37 @@ cmostime(struct rtcdate *r)
 
   *r = t1;
   r->year += 2000;
+}
+
+// Function to get the current time
+void get_current_time(struct rtcdate* r) {
+    if (!r) return;
+
+    struct rtcdate t1, t2;
+    int sb, bcd;
+
+    sb = cmos_read(CMOS_STATB);
+    bcd = (sb & (1 << 2)) == 0;
+
+    // make sure CMOS doesn't modify time while we read it
+    for (;;) {
+        fill_rtcdate(&t1);
+        if (cmos_read(CMOS_STATA) & CMOS_UIP)
+            continue;
+        fill_rtcdate(&t2);
+        if (memcmp(&t1, &t2, sizeof(t1)) == 0)
+            break;
+    }
+
+    // convert
+    if (bcd) {
+        t1.second = (t1.second & 0x0F) + ((t1.second / 16) * 10);
+        t1.minute = (t1.minute & 0x0F) + ((t1.minute / 16) * 10);
+        t1.hour   = ((t1.hour & 0x0F) + (((t1.hour & 0x70) / 16) * 10)) | (t1.hour & 0x80);
+        t1.day    = (t1.day & 0x0F) + ((t1.day / 16) * 10);
+        t1.month  = (t1.month & 0x0F) + ((t1.month / 16) * 10);
+        t1.year   = (t1.year & 0x0F) + ((t1.year / 16) * 10);
+    }
+    *r = t1;
+    r->year += 2000;
 }

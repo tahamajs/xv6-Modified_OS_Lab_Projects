@@ -7,6 +7,7 @@
 #include "x86.h"
 #include "traps.h"
 #include "spinlock.h"
+#include "date.h"
 
 // Interrupt descriptor table (shared by all CPUs).
 struct gatedesc idt[256];
@@ -45,6 +46,9 @@ void trap(struct trapframe* tf) {
         if (cpuid() == 0) {
             acquire(&tickslock);
             ticks++;
+            if (myproc() != 0 && myproc()->state == RUNNING) {
+                cprintf("Process ID after quantum: %d\n", myproc()->pid);
+            }
             aging(ticks);
             wakeup(&ticks);
             release(&tickslock);

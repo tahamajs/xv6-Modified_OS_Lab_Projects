@@ -83,6 +83,7 @@ void lapiceoi(void);
 void lapicinit(void);
 void lapicstartap(uchar, uint);
 void microdelay(int);
+void get_current_time(struct rtcdate*);
 // void initprioritylock(struct prioritylock*, char*);
 
 

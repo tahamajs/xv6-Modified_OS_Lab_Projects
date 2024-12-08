@@ -28,6 +28,7 @@ OBJS = \
 	uart.o\
 	vectors.o\
 	vm.o\
+	rand.o\
 
 
 
@@ -194,6 +195,7 @@ UPROGS=\
     _test_get_most_invoked\
     _test_list_processes\
 	_test_syscall_gdb\
+	_test_timequantum\
 
 
 fs.img: mkfs README $(UPROGS)
@@ -235,7 +237,7 @@ CPUS := 2
 endif
 CFLAGS += -DCPUS=$(CPUS)
 
-QEMUOPTS = -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp $(CPUS) -m 512 $(QEMUEXTRA)
+QEMUOPTS = -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp cpus=$(CPUS),cores=1,threads=1,sockets=$(CPUS) -m 512 $(QEMUEXTRA)
 
 qemu: fs.img xv6.img
 	$(QEMU) -serial mon:stdio $(QEMUOPTS)
@@ -281,6 +283,11 @@ fibonacci: fibonacci.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o fibonacci fibonacci.o $(ULIB)
 	$(OBJDUMP) -S fibonacci > fibonacci.asm
 	$(OBJDUMP) -t fibonacci | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > fibonacci.sym
+
+test_timequantum: test_timequantum.o $(ULIB)
+	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o test_timequantum test_timequantum.o $(ULIB)
+	$(OBJDUMP) -S test_timequantum > test_timequantum.asm
+	$(OBJDUMP) -t test_timequantum | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > test_timequantum.sym
 
 
 

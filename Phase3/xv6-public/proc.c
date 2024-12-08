@@ -7,6 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 #include "prioritylock.h"
+#include "rand.h" 
 
 struct {
     struct spinlock lock;
@@ -87,6 +88,9 @@ allocproc(void) {
 found:
     p->state = EMBRYO;
     p->pid = nextpid++;
+
+    p->burst_time = 2; // Default burst time 
+    p->confidence_level = 50; // Default confidence level
 
     release(&ptable.lock);
 
@@ -588,6 +592,48 @@ struct proc* last_come_first_serve(void) {
 
     return next_p;
 }
+
+
+struct proc* shortest_job_first(void) {
+    struct proc *p;
+    struct proc *next_proc = 0;
+    int min_burst = 10000000;
+    int confidence_check;
+
+    acquire(&ptable.lock);
+
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state != RUNNABLE)
+            continue;
+
+        if(next_proc == 0 || p->burst_time < min_burst) {
+            next_proc = p;
+            min_burst = p->burst_time;
+        }
+    }
+
+    if(next_proc) {
+        confidence_check = rand() % 100;
+        if(confidence_check > next_proc->confidence_level) {
+            for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+                if(p->state != RUNNABLE || p == next_proc)
+                    continue;
+
+                if(p->burst_time < min_burst) {
+                    next_proc = p;
+                    min_burst = p->burst_time;
+                    if(confidence_check <= next_proc->confidence_level) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    release(&ptable.lock);
+    return next_proc;
+}
+
 
 // PAGEBREAK: 42
 //  Per-CPU process scheduler.
