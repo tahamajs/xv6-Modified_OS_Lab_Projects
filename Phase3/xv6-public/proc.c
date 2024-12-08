@@ -978,3 +978,18 @@ void sort_syscalls()
     release(&ptable.lock);
     return -1; 
 }
+
+int bjsproc(int pid, float a, float b, float c, float d) {
+    // Implement the function logic here
+    return 0;
+}
+
+int bjssys(float a, float b, float c, float d) {
+    // Implement the function logic here
+    return 0;
+}
+
+int set_estimated_runtime(int pid, int runtime, int confidence) {
+    // Implement the function logic here
+    return 0;
+}

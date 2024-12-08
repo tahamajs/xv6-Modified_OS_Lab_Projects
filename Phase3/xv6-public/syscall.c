@@ -84,6 +84,10 @@ extern int sys_get_most_invoked_syscall(void);
 extern int sys_list_all_processes(void);
 extern int sys_set_scheduling_queue(void);
 extern int sys_print_processes_info(void);
+extern int sys_chqueue(void);
+extern int sys_bjsproc(void);
+extern int sys_bjssys(void);
+extern int sys_changequeue(void);
 
 
 
@@ -164,10 +168,11 @@ static int (*syscalls[])(void) = {
     [SYS_get_most_invoked_syscall] sys_get_most_invoked_syscall,
     [SYS_list_all_processes]      sys_list_all_processes,
     [SYS_set_scheduling_queue]    sys_set_scheduling_queue,
-    [SYS_print_processes_info]    sys_procinfo,
-    [SYS_chqueue]    sys_chqueue,
-    [SYS_bjsproc]    sys_bjsproc,
-    [SYS_bjssys]     sys_bjssys,
+    [SYS_print_processes_info]    sys_print_processes_info,
+    [SYS_chqueue]                 sys_chqueue,
+    [SYS_bjsproc]                 sys_bjsproc,
+    [SYS_bjssys]                  sys_bjssys,
+    [SYS_changequeue]             sys_changequeue,
 };
 
 

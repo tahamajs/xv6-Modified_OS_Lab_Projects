@@ -8,6 +8,13 @@
 #include "proc.h"
 #include "spinlock.h"
 
+// Add function declarations
+int bjsproc(int pid, float a, float b, float c, float d);
+int bjssys(float a, float b, float c, float d);
+int print_processes_infos(void);
+void sort_syscalls(void);
+int get_most_invoked(void);
+int set_estimated_runtime(int pid, int runtime, int confidence);
 
 // System call to set a process's scheduling queue
 int sys_set_scheduling_queue(void)
@@ -28,14 +35,26 @@ int sys_chqueue(void) {
     return change_queue(pid, queue);
 }
 
-// System call to print processes information
-int
-sys_print_processes_info(void)
-{
-  print_processes_info();
-  return 0;
+int sys_bjsproc(void) {
+    int pid;
+    float a, b, c, d;
+    if (argint(0, &pid) < 0 || argfloat(1, &a) < 0 || argfloat(2, &b) < 0 || argfloat(3, &c) < 0 || argfloat(4, &d) < 0)
+        return -1;
+    return bjsproc(pid, a, b, c, d);
 }
 
+int sys_bjssys(void) {
+    float a, b, c, d;
+    if (argfloat(0, &a) < 0 || argfloat(1, &b) < 0 || argfloat(2, &c) < 0 || argfloat(3, &d) < 0)
+        return -1;
+    return bjssys(a, b, c, d);
+}
+
+// Correct function names
+int sys_print_processes_info(void) {
+    print_processes_infos();
+    return 0;
+}
 
 int
 sys_fork(void)
@@ -155,20 +174,9 @@ sys_get_most_invoked_syscall(void)
 
 }
 
-int
-sys_list_all_processes(void)
-{
-    struct proc *p;
-
-    acquire(&ptable.lock);
-    cprintf("PID    Syscall Count  Process Name\n");
-    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->state != UNUSED && p->state != ZOMBIE) {
-            cprintf("%d      %d            %s\n", p->pid, p->syscall_count, p->name);
-        }
-    }
-    release(&ptable.lock);
-
+// Correct function names
+int sys_list_all_processes(void) {
+    list_proceases();
     return 0;
 }
 
@@ -194,4 +202,11 @@ sys_change_queue(void)
   if(argint(1, &new_queue_level) < 0)
     return -1;
   return change_queue(pid, new_queue_level);
+}
+
+int sys_changequeue(void) {
+    int pid, new_queue_level;
+    if (argint(0, &pid) < 0 || argint(1, &new_queue_level) < 0)
+        return -1;
+    return change_queue(pid, new_queue_level);
 }

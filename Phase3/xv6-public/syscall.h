@@ -31,9 +31,21 @@
 #define SYS_set_scheduling_queue    30
 #define SYS_printprocs              31
 #define SYS_setbjfparams            32
-#define SYS_setsystembjf            33
+#define SYS_setsystembjf             33
+#define SYS_chqueue                 34
+#define SYS_bjsproc                 35
+#define SYS_bjssys                  36
+#define SYS_changequeue             37
+
+
+
+
+
 
 #define MAX_SYSCALLS                  100
+
+
+
 
 // int sys_set_scheduling_queue(void);
 // int sys_print_processes_info(void);
