@@ -9,14 +9,13 @@
 #include "spinlock.h"
 
 // Add function declarations
-int set_sjf_proc(int pid, float priority_ratio, float arrival_time_ratio,
-                 float executed_cycle_ratio, float process_size_ratio);
-int set_sjf_sys(float priority_ratio, float arrival_time_ratio,
-                float executed_cycle_ratio, float process_size_ratio);
+int set_sjf_proc(int pid, int priority_ratio, int burst_time);
+
+int set_sjf_sys(int priority_ratio, int burst_time);
+
 int print_processes_infos(void);
 void sort_syscalls(void);
 int get_most_invoked(void);
-int set_estimated_runtime(int pid, int runtime, int confidence);
 
 // System call to set a process's scheduling queue
 int sys_set_scheduling_queue(void)
@@ -32,17 +31,17 @@ int sys_set_scheduling_queue(void)
 
 int sys_set_sjf_proc(void) {
     int pid;
-    float a, b, c, d;
-    if (argint(0, &pid) < 0 || argfloat(1, &a) < 0 || argfloat(2, &b) < 0 || argfloat(3, &c) < 0 || argfloat(4, &d) < 0)
+    int a, b;
+    if (argint(0, &pid) < 0 || argint(1, &a) < 0 || argint(2, &b) < 0)
         return -1;
-    return set_sjf_proc(pid, a, b, c, d);
+    return set_sjf_proc(pid, a, b);
 }
 
 int sys_set_sjf_sys(void) {
-    float a, b, c, d;
-    if (argfloat(0, &a) < 0 || argfloat(1, &b) < 0 || argfloat(2, &c) < 0 || argfloat(3, &d) < 0)
+    int a, b;
+    if (argint(0, &a) < 0 || argint(1, &b) < 0 )
         return -1;
-    return set_sjf_sys(a, b, c, d);
+    return set_sjf_sys(a, b);
 }
 
 // Correct function names
@@ -175,18 +174,7 @@ int sys_list_all_processes(void) {
     return 0;
 }
 
-int
-sys_set_estimated_runtime(void)
-{
-  int pid, runtime, confidence;
-  if(argint(0, &pid) < 0)
-    return -1;
-  if(argint(1, &runtime) < 0)
-    return -1;
-  if(argint(2, &confidence) < 0)
-    return -1;
-  return set_estimated_runtime(pid, runtime, confidence);
-}
+
 
 int
 sys_change_queue(void)

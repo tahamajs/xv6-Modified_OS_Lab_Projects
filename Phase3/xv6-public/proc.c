@@ -13,7 +13,7 @@
 struct proc* select_round_robin(void);
 struct proc* select_sjf(void);
 struct proc* select_fcfs(void);
-// float procrank(struct sjfparams params);
+// float update_burst_time(struct sjfparams params);
 
 struct {
     struct spinlock lock;
@@ -124,11 +124,10 @@ found:
     p->sched.sjf.arrival_time = 0;
     p->sched.sjf.executed_cycle = 0;
     p->sched.sjf.process_size = 0;
+    p->sched.sjf.burst_time = 2;
 
-    p->sched.sjf.priority_ratio = 1;
-    p->sched.sjf.arrival_time_ratio = 1;
-    p->sched.sjf.executed_cycle_ratio = 1;
-    p->sched.sjf.process_size_ratio = 1;
+    p->sched.sjf.priority_ratio = 50;
+
 
     return p;
 }
@@ -341,7 +340,8 @@ void aging(int curr_time) {
             if (curr_time - p->sched.last_exec > MAX_AGE) {
                 int old_queue = p->sched.queue;
                 p->sched.queue--;
-                p->wait_time = 0;
+                p->sched.last_exec = ticks;
+                p->sched.last_termination = ticks;
                 cprintf("Process %d promoted from queue %d to queue %d\n", 
                         p->pid, old_queue, p->sched.queue);
             }
@@ -400,8 +400,7 @@ int change_queue(int pid, int new_queue) {
     return 0;
 }
 
-int set_sjf_proc(int pid, float priority_ratio, float arrival_time_ratio,
-                 float executed_cycle_ratio, float process_size_ratio) {
+int set_sjf_proc(int pid, int priority_ratio, int burst_time) {
     struct proc* p;
     int is_pid_exist = 0;
     acquire(&ptable.lock);
@@ -409,9 +408,7 @@ int set_sjf_proc(int pid, float priority_ratio, float arrival_time_ratio,
         if (p->pid == pid) {
             is_pid_exist = 1;
             p->sched.sjf.priority_ratio = priority_ratio;
-            p->sched.sjf.arrival_time_ratio = arrival_time_ratio;
-            p->sched.sjf.executed_cycle_ratio = executed_cycle_ratio;
-            p->sched.sjf.process_size_ratio = process_size_ratio;
+            p->sched.sjf.burst_time = burst_time;
             break;
         }
     }
@@ -422,15 +419,12 @@ int set_sjf_proc(int pid, float priority_ratio, float arrival_time_ratio,
     return 0;
 }
 
-int set_sjf_sys(float priority_ratio, float arrival_time_ratio,
-                float executed_cycle_ratio, float process_size_ratio) {
+int set_sjf_sys(int priority_ratio, int burst_time) {
     struct proc* p;
     acquire(&ptable.lock);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         p->sched.sjf.priority_ratio = priority_ratio;
-        p->sched.sjf.arrival_time_ratio = arrival_time_ratio;
-        p->sched.sjf.executed_cycle_ratio = executed_cycle_ratio;
-        p->sched.sjf.process_size_ratio = process_size_ratio;
+        p->sched.sjf.burst_time = burst_time;
     }
     release(&ptable.lock);
 
@@ -461,8 +455,8 @@ int print_processes_infos(void) {
 
     static int columns[] = {16, 8, 12, 8, 8, 8, 8, 8, 8, 8, 8, 8};
     cprintf(
-        "Process_Name    PID     State     Queue   Cycle   Arrival  Priority  Size  R_Prty  R_Arvl  R_Exec  R_Size  Rank\n"
-        "---------------------------------------------------------------------------------------------------------------\n");
+        "Process_Name    PID     State     Queue   Waiting_Time   Exec_Cycles  Confidence   Burst_Time   Entry_Time\n"
+        "----------------------------------------------------------------------------------------------------------\n");
 
     struct proc* p;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
@@ -487,31 +481,22 @@ int print_processes_infos(void) {
         cprintf("%d", p->sched.queue);
         printspaces(columns[3] - digitcount(p->sched.queue));
 
-        cprintf("%d", (int)p->sched.sjf.executed_cycle);
-        printspaces(columns[4] - digitcount((int)p->sched.sjf.executed_cycle));
+        cprintf("%d", (int)p->wait_time);
+        printspaces(columns[4] - digitcount((int)p->wait_time));
 
-        cprintf("%d", p->sched.sjf.arrival_time);
-        printspaces(columns[5] - digitcount(p->sched.sjf.arrival_time));
+        cprintf("%d", p->sched.sjf.executed_cycle);
+        printspaces(columns[5] - digitcount(p->sched.sjf.executed_cycle));
 
         cprintf("%d", p->sched.sjf.priority);
-        printspaces(columns[6] - digitcount(p->sched.sjf.priority));
+        printspaces(columns[6] - digitcount(p->sched.sjf.priority_ratio));
 
-        cprintf("%d", p->sched.sjf.process_size);
-        printspaces(columns[7] - digitcount(p->sched.sjf.process_size));
+        cprintf("%d", p->sched.sjf.burst_time);
+        printspaces(columns[7] - digitcount(p->sched.sjf.burst_time));
 
-        cprintf("%d", (int)p->sched.sjf.priority_ratio);
-        printspaces(columns[8] - digitcount((int)p->sched.sjf.priority_ratio));
+        cprintf("%d", (int)p->sched.last_exec);
+        printspaces(columns[11] - digitcount((int)p->sched.last_exec));
 
-        cprintf("%d", (int)p->sched.sjf.arrival_time_ratio);
-        printspaces(columns[9] - digitcount((int)p->sched.sjf.arrival_time_ratio));
-
-        cprintf("%d", (int)p->sched.sjf.executed_cycle_ratio);
-        printspaces(columns[10] - digitcount((int)p->sched.sjf.executed_cycle_ratio));
-
-        cprintf("%d", (int)p->sched.sjf.process_size_ratio);
-        printspaces(columns[11] - digitcount((int)p->sched.sjf.process_size_ratio));
-
-        // cprintf("%d", (int)procrank(p->sched.sjf.
+        // cprintf("%d", (int)update_burst_time(p->sched.sjf.
         cprintf("\n");
     }
 
@@ -551,45 +536,27 @@ struct proc* round_robin(struct proc* last_scheduled) {
             return 0;
     }
 }
-
-// Update procrank to use sjfparams
-float procrank(struct sjfparams params) {
-    return (params.priority * params.priority_ratio +
-            params.arrival_time * params.arrival_time_ratio +
-            params.executed_cycle * params.executed_cycle_ratio +
-            params.process_size * params.process_size_ratio);
+#define ALPHA 0.75
+// Update update_burst_time to use sjfparams
+void update_burst_time(struct proc* p) {
+    acquire(&ptable.lock);
+    p->sched.sjf.burst_time = (int)(ALPHA * (p->sched.last_termination - p->sched.last_exec) + (1 - ALPHA) * p->sched.sjf.burst_time / p->sched.sjf.burst_time);
+    release(&ptable.lock);
+    return; 
 }
 
 struct proc* best_job_first(void) {
     struct proc* next_p = 0;
-    float best_rank;
+    int best_burst = 10000000;
 
     struct proc* p;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->state != RUNNABLE || p->sched.queue != SJF)
             continue;
-        float rank = procrank(p->sched.sjf);
-        if (next_p == 0 || rank < best_rank) {
+        update_burst_time(p);
+        if (next_p == 0 || p->sched.sjf.burst_time < best_burst) {
             next_p = p;
-            best_rank = rank;
-        }
-    }
-
-    return next_p;
-}
-
-struct proc* last_come_first_serve(void) {
-    struct proc* next_p = 0;
-    int latest_time = -1;
-
-    struct proc* p;
-    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->state != RUNNABLE || p->sched.queue != LCFS)
-            continue;
-        int time = p->ctime;
-        if (next_p == 0 || time > latest_time) {
-            next_p = p;
-            latest_time = time;
+            best_burst = p->sched.sjf.burst_time;
         }
     }
 
@@ -693,14 +660,14 @@ int random(void) {
 
 struct proc* select_sjf(void) {
     struct proc* selected = 0;
-    float best_rank = -1;
+    int best_burst = 1000000;
     for (struct proc* p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->state != RUNNABLE || p->sched.queue != SJF)
             continue;
-        float rank = procrank(p->sched.sjf);
-        if (selected == 0 || rank < best_rank) {
+        update_burst_time(p);
+        if (selected == 0 || p->sched.sjf.burst_time < best_burst) {
             selected = p;
-            best_rank = rank;
+            best_burst = p->sched.sjf.burst_time;
         }
     }
     if (selected) {
@@ -1028,20 +995,6 @@ int sort_syscalls(void) {
     return -1;
 }
 
-int bjsproc(int pid, float a, float b, float c, float d) {
-    // Implement the function logic here
-    return 0;
-}
-
-int bjssys(float a, float b, float c, float d) {
-    // Implement the function logic here
-    return 0;
-}
-
-int set_estimated_runtime(int pid, int runtime, int confidence) {
-    // Implement the function logic here
-    return 0;
-}
 
 // int exec(char *path, char **argv) {
 //     // ...existing code...

@@ -55,8 +55,9 @@ void trap(struct trapframe* tf) {
         struct proc *p = myproc();
         if (p && p->state == RUNNING && p->sched.queue == ROUND_ROBIN) {
             p->sched.sjf.executed_cycle++;
+            p->sched.last_termination = ticks;
             if (p->sched.sjf.executed_cycle >= ROUND_ROBIN_TIME_SLICE) {
-                p->sched.sjf.executed_cycle = 0;
+                // p->sched.sjf.executed_cycle = 0;
                 yield();
             }
         }

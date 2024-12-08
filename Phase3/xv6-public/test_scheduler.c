@@ -126,7 +126,7 @@ void test_scheduling_queues(int log_fd) {
     // SJF Process
     if ((pids[1] = fork()) == 0) {
         change_queue(getpid(), 1);
-        set_sjf_proc(getpid(), 1.0, 0.5, 0.3, 0.2);
+        set_sjf_proc(getpid(),50 ,2);
         format_string(buffer, "SJF Process (PID: %d) started\n", getpid());
         write_to_file(log_fd, buffer);
         
