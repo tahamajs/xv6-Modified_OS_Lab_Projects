@@ -459,9 +459,9 @@ int print_processes_infos(void) {
         [RUNNING] "running",
         [ZOMBIE] "zombie"};
 
-    static int columns[] = {16, 8, 12, 8, 8, 8, 8, 8, 8, 8, 8, 8};
+    static int columns[] = {16, 8, 12, 8, 8, 8, 8, 8, 8};
     cprintf(
-        "Process_Name    PID     State     Queue   Cycle   Arrival  Priority  Size  R_Prty  R_Arvl  R_Exec  R_Size  Rank\n"
+        "Process_Name    PID     State     Queue   Wait time   Confidence  Burst Time  Consecutive Run    Arrival\n"
         "---------------------------------------------------------------------------------------------------------------\n");
 
     struct proc* p;
@@ -487,31 +487,21 @@ int print_processes_infos(void) {
         cprintf("%d", p->sched.queue);
         printspaces(columns[3] - digitcount(p->sched.queue));
 
-        cprintf("%d", (int)p->sched.sjf.executed_cycle);
-        printspaces(columns[4] - digitcount((int)p->sched.sjf.executed_cycle));
+        cprintf("%d", p->wait_time);
+        printspaces(columns[4] - digitcount(p->wait_time));
+
+        cprintf("%d", p->sched.sjf.confidence_level);
+        printspaces(columns[5] - digitcount(p->sched.sjf.confidence_level));
+
+        cprintf("%d", p->sched.sjf.burst_time);
+        printspaces(columns[6] - digitcount(p->sched.sjf.burst_time));
+
+        cprintf("%d", p->sched.sjf.executed_cycle);
+        printspaces(columns[7] - digitcount(p->sched.sjf.executed_cycle));
 
         cprintf("%d", p->sched.sjf.arrival_time);
-        printspaces(columns[5] - digitcount(p->sched.sjf.arrival_time));
+        printspaces(columns[8] - digitcount(p->sched.sjf.arrival_time));
 
-        cprintf("%d", p->sched.sjf.priority);
-        printspaces(columns[6] - digitcount(p->sched.sjf.priority));
-
-        cprintf("%d", p->sched.sjf.process_size);
-        printspaces(columns[7] - digitcount(p->sched.sjf.process_size));
-
-        cprintf("%d", (int)p->sched.sjf.priority_ratio);
-        printspaces(columns[8] - digitcount((int)p->sched.sjf.priority_ratio));
-
-        cprintf("%d", (int)p->sched.sjf.arrival_time_ratio);
-        printspaces(columns[9] - digitcount((int)p->sched.sjf.arrival_time_ratio));
-
-        cprintf("%d", (int)p->sched.sjf.executed_cycle_ratio);
-        printspaces(columns[10] - digitcount((int)p->sched.sjf.executed_cycle_ratio));
-
-        cprintf("%d", (int)p->sched.sjf.process_size_ratio);
-        printspaces(columns[11] - digitcount((int)p->sched.sjf.process_size_ratio));
-
-        // cprintf("%d", (int)procrank(p->sched.sjf.
         cprintf("\n");
     }
 
