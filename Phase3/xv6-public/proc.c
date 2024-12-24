@@ -9,11 +9,9 @@
 #include "prioritylock.h"
 #include "string.h"
 
-// Function declarations
 struct proc* select_round_robin(void);
 struct proc* select_sjf(void);
 struct proc* select_fcfs(void);
-// float update_burst_time(struct sjfparams params);
 
 struct {
     struct spinlock lock;
@@ -127,9 +125,7 @@ found:
     p->sched.sjf.burst_time = 2;
 
     p->sched.sjf.priority_ratio = 1;
-    p->sched.sjf.arrival_time_ratio = 1;
-    p->sched.sjf.executed_cycle_ratio = 1;
-    p->sched.sjf.process_size_ratio = 1;
+
 
     // Set default confidence level and burst time for SJF
     p->sched.sjf.confidence_level = 50;
@@ -547,14 +543,6 @@ struct proc* round_robin(struct proc* last_scheduled) {
     }
 }
 
-// Update procrank to use sjfparams
-float procrank(struct sjfparams params) {
-    return (params.priority * params.priority_ratio +
-            params.arrival_time * params.arrival_time_ratio +
-            params.executed_cycle * params.executed_cycle_ratio +
-            params.process_size * params.process_size_ratio);
-}
-
 int procrank_burst_time(struct proc* p) {
     return p->sched.sjf.burst_time;
 }
@@ -567,7 +555,6 @@ struct proc* best_job_first(void) {
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->state != RUNNABLE || p->sched.queue != SJF)
             continue;
-        update_burst_time(p);
         if (next_p == 0 || p->sched.sjf.burst_time < best_burst) {
             next_p = p;
             best_burst = p->sched.sjf.burst_time;
@@ -700,7 +687,7 @@ struct proc* select_sjf(void) {
         float rank = procrank_burst_time(p);
         if (selected == 0 || rank < best_rank) {
             selected = p;
-            best_burst = p->sched.sjf.burst_time;
+            // best_burst = p->sched.sjf.burst_time;
         }
     }
     if (selected) {
