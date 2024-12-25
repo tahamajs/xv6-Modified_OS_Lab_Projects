@@ -17,6 +17,9 @@ uint ticks;
 
 #define ROUND_ROBIN_TIME_SLICE 5
 
+int global_syscall_count = 0;
+struct spinlock global_syscall_lock;
+
 void tvinit(void) {
     int i;
 
@@ -25,6 +28,8 @@ void tvinit(void) {
     SETGATE(idt[T_SYSCALL], 1, SEG_KCODE << 3, vectors[T_SYSCALL], DPL_USER);
 
     initlock(&tickslock, "time");
+    initlock(&global_syscall_lock, "gsc");
+    global_syscall_count = 0;
 }
 
 void idtinit(void) {

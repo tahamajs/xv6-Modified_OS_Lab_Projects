@@ -28,6 +28,7 @@ OBJS = \
 	uart.o\
 	vectors.o\
 	vm.o\
+	reentrantlock.o\
 
 
 

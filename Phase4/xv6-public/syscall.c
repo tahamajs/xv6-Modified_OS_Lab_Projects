@@ -10,6 +10,8 @@
 // int syscalls[MAX_SYSCALLS] = {0};  // Initialize with default values if needed
 // struct nsyslock nsys;
 struct nsyslock nsys;
+extern int global_syscall_count;
+extern struct spinlock global_syscall_lock;
 
 
 // Fetch the int at addr from the current process.
@@ -92,8 +94,9 @@ extern int sys_set_sjf_sys(void);
 extern int sys_user_program(void);
 // extern int sys_set_SJF_params(void);
 
-
-
+int sys_scinfo(void);     // forward
+int sys_reacquire(void);  // forward
+int sys_rerelease(void);  // forward
 
 
 // Fetch the nul-terminated string at addr from the current process.
@@ -175,6 +178,9 @@ static int (*syscalls[])(void) = {
     [SYS_set_sjf_proc]            sys_set_sjf_proc,
     [SYS_set_sjf_sys]             sys_set_sjf_sys,
     [SYS_change_queue]            sys_change_queue,
+    [SYS_scinfo]                  sys_scinfo,
+    [SYS_reacquire]               sys_reacquire,
+    [SYS_rerelease]               sys_rerelease,
     // [SYS_set_SJF_params]          sys_set_SJF_params,
 };
 
@@ -206,4 +212,38 @@ void syscall(void) {
     acquire(&nsys.lk);
     nsys.n++;
     release(&nsys.lk);
+
+    // Weighted logic example
+    int weight = 1;
+    if(num == SYS_write)  weight = 2;
+    if(num == SYS_open)   weight = 3;
+
+    pushcli();
+    cpus[cpuid()].nsyscall += weight; // CPU-local
+    acquire(&global_syscall_lock);
+    global_syscall_count += weight;   // global
+    release(&global_syscall_lock);
+    popcli();
+}
+
+// Implementation of scinfo
+int sys_scinfo(void) {
+    int val;
+    acquire(&global_syscall_lock);
+    val = global_syscall_count;
+    release(&global_syscall_lock);
+    return val;
+}
+
+// Dummy reacquire/rerelease using a global reentrantlock as example
+static struct reentrantlock testlock;
+
+int sys_reacquire(void) {
+    acquirereentrantlock(&testlock);
+    return 0;
+}
+
+int sys_rerelease(void) {
+    releasereentrantlock(&testlock);
+    return 0;
 }

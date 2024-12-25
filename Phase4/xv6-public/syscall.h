@@ -23,20 +23,23 @@
 #define SYS_change_queue            22
 #define SYS_set_estimated_runtime   23
 #define SYS_print_processes_info    24
-#define SYS_create_palindrome       25
-#define SYS_move_file               26
-#define SYS_sort_syscalls           27
-#define SYS_get_most_invoked_syscall 28
-#define SYS_list_all_processes      29
-#define SYS_set_scheduling_queue    30
-#define SYS_printprocs              31
-#define SYS_set_sjf_proc            32
-#define SYS_set_sjf_sys             33
-#define SYS_chqueue                 34
-#define SYS_bjsproc                 35
-#define SYS_bjssys                  36
-#define SYS_user_program             37
-#define SYS_set_SJF_params           38  // Use the next available syscall number
+#define SYS_scinfo                  25
+#define SYS_reacquire               26
+#define SYS_rerelease               27
+#define SYS_create_palindrome       28
+#define SYS_move_file               29
+#define SYS_sort_syscalls           30
+#define SYS_get_most_invoked_syscall 31
+#define SYS_list_all_processes      32
+#define SYS_set_scheduling_queue    33
+#define SYS_printprocs              34
+#define SYS_set_sjf_proc            35
+#define SYS_set_sjf_sys             36
+#define SYS_chqueue                 37
+#define SYS_bjsproc                 38
+#define SYS_bjssys                  39
+#define SYS_user_program            40
+#define SYS_set_SJF_params          41  // Use the next available syscall number
 
 #define MAX_SYSCALLS                  100
 

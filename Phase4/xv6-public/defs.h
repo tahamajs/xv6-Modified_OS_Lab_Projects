@@ -13,6 +13,7 @@ struct stat;
 struct superblock;
 struct bjfparams;
 struct prioritylock;
+struct reentrantlock;
 
 // bio.c
 void binit(void);
@@ -135,6 +136,9 @@ int pqueue(void);
 int nsyscalls(void);
 int user_program(void);
 int set_SJF_params(int pid, int burst_time, int confidence);
+int reacquire(void);
+int rerelease(void);
+int scinfo(void);
 
 // swtch.S
 void swtch(struct context**, struct context*);
@@ -161,6 +165,11 @@ void releasepriority(struct prioritylock*);
 void showlockqueue(struct prioritylock*);
 int isprioritylocked(struct prioritylock*);
 int isholdingpriority(struct prioritylock*);
+
+// reentrantlock.c
+void initreentrantlock(struct reentrantlock*, char*);
+void acquirereentrantlock(struct reentrantlock*);
+void releasereentrantlock(struct reentrantlock*);
 
 // string.c
 int memcmp(const void*, const void*, uint);
