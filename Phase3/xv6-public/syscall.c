@@ -175,6 +175,7 @@ static int (*syscalls[])(void) = {
     [SYS_set_sjf_sys]             sys_set_sjf_sys,
     [SYS_change_queue]            sys_change_queue,
     [SYS_set_SJF_params]          sys_set_SJF_params,
+    
 };
 
 
@@ -196,9 +197,9 @@ void syscall(void) {
     int CPUid = cpuid();
     sti();
     cpus[CPUid].nsyscall++;
-    // acquire(&nsys.lk);
-    // nsys.n++;
-    // release(&nsys.lk);
+    acquire(&nsys.lk);
+    nsys.n++;
+    release(&nsys.lk);
 }
 
 void getnsyscall(void) {

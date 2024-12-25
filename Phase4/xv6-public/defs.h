@@ -237,3 +237,4 @@ struct sjfparams {
 };
 
 // float procrank(struct sjfparams params);
+// void            getnsyscall(void);

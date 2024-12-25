@@ -8,7 +8,6 @@
 #include "proc.h"
 #include "spinlock.h"
 
-int set_sjf_params(int pid, int burst_time, int confidence) ;
 // Add function declarations
 int set_sjf_proc(int pid, int priority_ratio, int burst_time);
 
@@ -17,7 +16,6 @@ int set_sjf_sys(int priority_ratio, int burst_time);
 int print_processes_infos(void);
 void sort_syscalls(void);
 int get_most_invoked(void);
-// int set_estimated_runtime(int pid, int runtime, int confidence);
 
 // System call to set a process's scheduling queue
 int sys_set_scheduling_queue(void)
@@ -141,17 +139,16 @@ sys_create_palindrome(void)
     int num;
     if (argint(0, &num) < 0)
         return -1;
-    if(num == 0){
-      cprintf("Palindrome: %d\n",num);
-      return 0;
+    
+    int orig = num;
+    int rev = 0;
+    
+    while(num > 0) {
+        rev = rev * 10 + num % 10;
+        num /= 10;
     }
-    int reversed = 0, temp = num;
-    while (temp != 0) {
-        reversed = reversed * 10 + temp % 10;
-        temp /= 10;
-    }
-    cprintf("Palindrome: %d%d\n", num,reversed);
-
+    
+    cprintf("%d%d\n", orig, rev);
     return 0;
 }
 
@@ -176,19 +173,6 @@ int sys_list_all_processes(void) {
     return 0;
 }
 
-// int
-// sys_set_estimated_runtime(void)
-// {
-//   int pid, runtime, confidence;
-//   if(argint(0, &pid) < 0)
-//     return -1;
-//   if(argint(1, &runtime) < 0)
-//     return -1;
-//   if(argint(2, &confidence) < 0)
-//     return -1;
-//   return set_estimated_runtime(pid, runtime, confidence);
-// }
-
 int
 sys_change_queue(void)
 {
@@ -205,19 +189,3 @@ int sys_chqueue(void) {
     return sys_change_queue();
 }
 
-int sys_set_SJF_params(void) {
-    int pid, burst_time, confidence;
-
-    if(argint(0, &pid) < 0)
-        return -1;
-    if(argint(1, &burst_time) < 0)
-        return -1;
-    if(argint(2, &confidence) < 0)
-        return -1;
-
-    return set_SJF_params(pid, burst_time, confidence);
-}
-
-// int sys_user_program(void) {
-//     return user_program();
-// }

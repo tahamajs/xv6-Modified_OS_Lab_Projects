@@ -19,7 +19,10 @@ struct cpu {
     int time_slice;            // Time slice for the current queue
     int current_queue;         // Current queue being scheduled
     int queue_weights[3];      // Weights for the queues
+    
 };
+
+
 
 extern struct cpu cpus[NCPU];
 extern int ncpu;
@@ -107,5 +110,6 @@ struct proc {
     int wait_time;   // Time the process has been waiting in RUNNABLE state
     int syscall_count ;
     int consecutive_run; // Number of consecutive runs
+    
 };
 

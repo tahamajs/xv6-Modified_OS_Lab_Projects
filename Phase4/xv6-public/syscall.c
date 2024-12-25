@@ -11,6 +11,7 @@
 // struct nsyslock nsys;
 struct nsyslock nsys;
 
+
 // Fetch the int at addr from the current process.
 int fetchint(uint addr, int* ip) {
     struct proc* curproc = myproc();
@@ -89,7 +90,7 @@ extern int sys_changequeue(void);
 extern int sys_set_sjf_proc(void);
 extern int sys_set_sjf_sys(void);
 extern int sys_user_program(void);
-extern int sys_set_SJF_params(void);
+// extern int sys_set_SJF_params(void);
 
 
 
@@ -174,21 +175,27 @@ static int (*syscalls[])(void) = {
     [SYS_set_sjf_proc]            sys_set_sjf_proc,
     [SYS_set_sjf_sys]             sys_set_sjf_sys,
     [SYS_change_queue]            sys_change_queue,
-    [SYS_set_SJF_params]          sys_set_SJF_params,
+    // [SYS_set_SJF_params]          sys_set_SJF_params,
 };
 
 
 int syscall_counts[MAX_SYSCALLS] = {0}; 
+char* syscall_names[MAX_SYSCALLS] = {
+    [SYS_fork] "fork",
+    [SYS_exit] "exit",
+    // ...add names for all syscalls
+};
+
 void syscall(void) {
     int num;
     struct proc* curproc = myproc();
 
     num = curproc->tf->eax;
     if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+        syscall_counts[num]++;
         curproc->tf->eax = syscalls[num]();
-    }
-    else {
-        cprintf("%d %s: unknown sys call %d\n",
+    } else {
+        cprintf("%d %s: unknown sys call %d\n", 
                 curproc->pid, curproc->name, num);
         curproc->tf->eax = -1;
     }
@@ -196,19 +203,7 @@ void syscall(void) {
     int CPUid = cpuid();
     sti();
     cpus[CPUid].nsyscall++;
-    // acquire(&nsys.lk);
-    // nsys.n++;
-    // release(&nsys.lk);
-}
-
-void getnsyscall(void) {
-    cprintf("%d, %d, %d, %d, ",
-            cpus[0].nsyscall,
-            cpus[1].nsyscall,
-            cpus[2].nsyscall,
-            cpus[3].nsyscall);
     acquire(&nsys.lk);
-    cprintf("%d\n",
-            nsys.n);
+    nsys.n++;
     release(&nsys.lk);
 }
