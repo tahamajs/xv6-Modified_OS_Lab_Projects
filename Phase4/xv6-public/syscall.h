@@ -48,6 +48,8 @@
 // int sys_set_scheduling_queue(void);
 // int sys_print_processes_info(void);
 
+void getnsyscall(void);
+
 
 
 

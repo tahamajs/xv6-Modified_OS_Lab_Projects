@@ -8,6 +8,10 @@
 #include "spinlock.h"
 #include "prioritylock.h"
 #include "string.h"
+#include "syscall.h"  // Add this line to include the getnsyscall function
+
+// Declare the getnsyscall function
+// extern void getnsyscall(void);
 
 struct proc* select_round_robin(void);
 struct proc* select_sjf(void);
@@ -1043,12 +1047,4 @@ int set_SJF_params(int pid, int burst_time, int confidence) {
     return -1;
 }
 
-// int exec(char *path, char **argv) {
-//     // ...existing code...
-//     struct proc *curproc = myproc();
-//     if (curproc != initproc && strcmp(curproc->name, "sh") != 0) {
-//         change_queue(curproc->pid, FCFS);
-//     }
-//     // ...existing code...
-// }
 

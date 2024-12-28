@@ -16,6 +16,8 @@ int set_sjf_sys(int priority_ratio, int burst_time);
 int print_processes_infos(void);
 void sort_syscalls(void);
 int get_most_invoked(void);
+extern int list_proceases(void);
+extern struct reentrantlock testlock;
 
 // System call to set a process's scheduling queue
 int sys_set_scheduling_queue(void)
@@ -157,6 +159,7 @@ int
 sys_sort_syscalls(void)
 {
   sort_syscalls();
+  return 0;
 }
 
 
@@ -189,3 +192,15 @@ int sys_chqueue(void) {
     return sys_change_queue();
 }
 
+
+// static struct reentrantlock testlock;
+
+int sys_reacquire(void) {
+    acquirereentrantlock(&testlock);
+    return 0;
+}
+
+int sys_rerelease(void) {
+    releasereentrantlock(&testlock);
+    return 0;
+}

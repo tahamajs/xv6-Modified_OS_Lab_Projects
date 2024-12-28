@@ -11,7 +11,11 @@ struct reentrantlock {
     char *name;
 };
 
+extern struct reentrantlock testlock;
+
 // Function prototypes
 void initreentrantlock(struct reentrantlock *r, char *name);
 void acquirereentrantlock(struct reentrantlock *r);
 void releasereentrantlock(struct reentrantlock *r);
+
+

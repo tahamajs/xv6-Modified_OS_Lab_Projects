@@ -1,9 +1,11 @@
-
 #include "types.h"
 #include "defs.h"
 #include "spinlock.h"
 #include "reentrantlock.h"
 #include "proc.h"
+#include "x86.h"  // Add this line to include the xchg function
+
+struct reentrantlock testlock;
 
 // Initialize the reentrant lock
 void initreentrantlock(struct reentrantlock *r, char *name) {
@@ -13,6 +15,9 @@ void initreentrantlock(struct reentrantlock *r, char *name) {
     r->count = 0;
     r->name = name;
 }
+
+
+
 
 // Acquire the reentrant lock
 void acquirereentrantlock(struct reentrantlock *r) {

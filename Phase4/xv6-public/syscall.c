@@ -7,6 +7,8 @@
 #include "x86.h"
 #include "syscall.h"
 #include "mp.h"
+#include "spinlock.h"
+#include "reentrantlock.h"
 // int syscalls[MAX_SYSCALLS] = {0};  // Initialize with default values if needed
 // struct nsyslock nsys;
 struct nsyslock nsys;
@@ -143,6 +145,9 @@ extern int sys_uptime(void);
 extern int sys_set_scheduling_queue(void);
 extern int sys_print_processes_info(void);
 extern int sys_change_queue(void);
+extern int sys_reacquire(void);
+extern int sys_rerelease(void);
+
 
 
 static int (*syscalls[])(void) = {
@@ -189,7 +194,6 @@ int syscall_counts[MAX_SYSCALLS] = {0};
 char* syscall_names[MAX_SYSCALLS] = {
     [SYS_fork] "fork",
     [SYS_exit] "exit",
-    // ...add names for all syscalls
 };
 
 void syscall(void) {
@@ -226,6 +230,14 @@ void syscall(void) {
     popcli();
 }
 
+// Get the total number of system calls
+void getnsyscall(void) {
+    struct proc *p = myproc();
+    acquire(&global_syscall_lock);
+    cprintf("Total system calls: %d\n", global_syscall_count);
+    release(&global_syscall_lock);
+}
+
 // Implementation of scinfo
 int sys_scinfo(void) {
     int val;
@@ -236,14 +248,4 @@ int sys_scinfo(void) {
 }
 
 // Dummy reacquire/rerelease using a global reentrantlock as example
-static struct reentrantlock testlock;
 
-int sys_reacquire(void) {
-    acquirereentrantlock(&testlock);
-    return 0;
-}
-
-int sys_rerelease(void) {
-    releasereentrantlock(&testlock);
-    return 0;
-}

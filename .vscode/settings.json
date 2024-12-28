@@ -1,5 +1,10 @@
 {
     "files.associations": {
-        "types.h": "c"
+        "types.h": "c",
+        "spinlock.h": "c",
+        "reentrantlock.h": "c",
+        "syscall.h": "c",
+        "defs.h": "c",
+        "prioritylock.h": "c"
     }
 }

@@ -3,6 +3,7 @@
 #include "mmu.h"    // Include mmu.h for types like pde_t and taskstate
 #include "spinlock.h"
 #include "defs.h"
+// #include "syscall.h
 
 
 // Per-CPU state
