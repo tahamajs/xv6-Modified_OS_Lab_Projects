@@ -668,7 +668,7 @@ struct proc* select_round_robin(void) {
             p = ptable.proc;
         if (p->state == RUNNABLE && p->sched.queue == ROUND_ROBIN) {
             if (ticks < ROUND_ROBIN_TICKS) {
-                // ticks++;
+                ticks++;
                 last_scheduled = p;
                 return p;
             } else {

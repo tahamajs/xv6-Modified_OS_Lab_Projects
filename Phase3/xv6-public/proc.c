@@ -678,25 +678,41 @@ struct proc* select_round_robin(void) {
 }
 
 struct proc* select_sjf(void) {
-    struct proc* selected = 0;
-    float best_rank = -1;
+    struct proc* runnable_procs[NPROC];
+    int runnable_count = 0;
 
+    // Collect all runnable SJF processes
     for (struct proc* p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->state != RUNNABLE || p->sched.queue != SJF)
-            continue;
-        float rank = procrank_burst_time(p);
-        if (selected == 0 || rank < best_rank) {
-            selected = p;
-            // best_burst = p->sched.sjf.burst_time;
+        if (p->state == RUNNABLE && p->sched.queue == SJF) {
+            runnable_procs[runnable_count++] = p;
         }
     }
-    if (selected) {
+
+    // Sort the runnable processes by their rank
+    for (int i = 0; i < runnable_count - 1; i++) {
+        for (int j = 0; j < runnable_count - i - 1; j++) {
+            if (procrank_burst_time(runnable_procs[j]) > procrank_burst_time(runnable_procs[j + 1])) {
+                struct proc* temp = runnable_procs[j];
+                runnable_procs[j] = runnable_procs[j + 1];
+                runnable_procs[j + 1] = temp;
+            }
+        }
+    }
+
+    // Iterate through the sorted array and select the process based on confidence level
+    for (int i = 0; i < runnable_count; i++) {
         int random_value = random() % 100;
-        if (random_value <= selected->sched.sjf.confidence_level) {
-            return selected;
+        if (random_value <= runnable_procs[i]->sched.sjf.confidence_level) {
+            return runnable_procs[i];
         }
     }
-    return selected;
+
+    // If no process meets the confidence level criteria, return the last process
+    if (runnable_count > 0) {
+        return runnable_procs[runnable_count - 1];
+    }
+
+    return 0;
 }
 
 struct proc* select_fcfs(void) {
