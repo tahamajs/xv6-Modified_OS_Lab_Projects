@@ -43,7 +43,13 @@ void releasereentrantlock(struct reentrantlock *r) {
     acquire(&r->lk);
 
     if(r->owner != myproc()->pid) {
-        panic("releasereentrantlock: not owner");
+        // panic("releasereentrantlock: not owner");
+            release(&r->lk);
+    popcli();
+        return;
+    }
+    if(r->count == 0) {
+        panic("releasereentrantlock: lock not held");
     }
     r->count--;
     if(r->count == 0) {
