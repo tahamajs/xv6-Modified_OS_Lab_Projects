@@ -79,6 +79,7 @@ void kinit2(void*, void*);
 
 // kbd.c
 void kbdintr(void);
+int sys_get_all_cpus_syscalls(void);
 
 // lapic.c
 void cmostime(struct rtcdate *r);

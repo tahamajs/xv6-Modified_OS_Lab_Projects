@@ -12,6 +12,7 @@
 
 // Declare the getnsyscall function
 extern void getnsyscall(void);
+extern int sys_nsyscalls(void);
 
 struct proc* select_round_robin(void);
 struct proc* select_sjf(void);
@@ -922,8 +923,7 @@ int droot(int n) {
 }
 
 int nsyscalls(void) {
-    getnsyscall();
-    return 0;
+    return sys_nsyscalls();  // Return the value from sys_nsyscalls
 }
 
 int pacquire(void) {

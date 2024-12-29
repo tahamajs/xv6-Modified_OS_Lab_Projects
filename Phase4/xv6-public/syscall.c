@@ -180,7 +180,7 @@ static int (*syscalls[])(void) = {
     [SYS_reacquire]               sys_reacquire,
     [SYS_rerelease]               sys_rerelease,
     [SYS_nsyscalls]               sys_nsyscalls,
-    [SYS_test_syscall_count]      sys_test_syscall_count,
+    [SYS_get_all_cpus_syscalls]   sys_get_all_cpus_syscalls,
 };
 
 int syscall_counts[MAX_SYSCALLS] = {0}; 
@@ -201,33 +201,28 @@ void syscall(void) {
         cprintf("%d %s: unknown sys call %d\n", 
                 curproc->pid, curproc->name, num);
         curproc->tf->eax = -1;
+        return;
     }
-    cli();
-    int CPUid = cpuid();
-    sti();
-    cpus[CPUid].nsyscall++;
-    acquire(&nsys.lk);
-    nsys.n++;
-    release(&nsys.lk);
 
-    // Weighted logic example
-    int weight = 1;
+    // Calculate weight based on syscall type
+    int weight = 1;  // default weight
     if(num == SYS_write)  weight = 2;
     if(num == SYS_open)   weight = 3;
 
-    pushcli();
-    cpus[cpuid()].nsyscall += weight; // CPU-local
-    acquire(&global_syscall_lock);
-    global_syscall_count += weight;   // global
-    release(&global_syscall_lock);
-    popcli();
-}
+    // Update CPU-specific count with weight
+    cli();
+    int CPUid = cpuid();
+    cpus[CPUid].nsyscall += weight;
+    sti();
 
-// Get the total number of system calls
-void getnsyscall(void) {
-    struct proc *p = myproc();
+    // Update nsys count with weight
+    acquire(&nsys.lk);
+    nsys.n += weight;
+    release(&nsys.lk);
+
+    // Update global count with weight
     acquire(&global_syscall_lock);
-    cprintf("Total system calls: %d\n", global_syscall_count);
+    global_syscall_count += weight;
     release(&global_syscall_lock);
 }
 
@@ -238,6 +233,26 @@ int sys_scinfo(void) {
     val = global_syscall_count;
     release(&global_syscall_lock);
     return val;
+}
+
+// Get the total number of system calls and return the value
+int sys_nsyscalls(void) {
+    int val;
+    acquire(&global_syscall_lock);
+    val = global_syscall_count;
+    release(&global_syscall_lock);
+    return val;
+}
+
+// Add this new function:
+int sys_get_all_cpus_syscalls(void) {
+    int total = 0;
+    pushcli();
+    for(int i = 0; i < ncpu; i++) {
+        total += cpus[i].nsyscall;
+    }
+    popcli();
+    return total;
 }
 
 

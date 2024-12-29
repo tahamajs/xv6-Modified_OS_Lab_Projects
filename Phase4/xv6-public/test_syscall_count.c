@@ -67,7 +67,9 @@ void child_process(int id) {
 
 int main(void) {
     int initial_count = nsyscalls();
-    printf(1, "Initial syscall count: %d\n", initial_count);
+    int initial_cpu_count = get_all_cpus_syscalls();
+    printf(1, "Initial global syscall count: %d\n", initial_count);
+    printf(1, "Initial per-CPU syscall count: %d\n", initial_cpu_count);
 
     // Create multiple processes
     int pids[NUM_PROCESSES];
@@ -89,15 +91,21 @@ int main(void) {
 
     // Get final count and verify
     int final_count = nsyscalls();
-    printf(1, "Final syscall count: %d\n", final_count);
-    printf(1, "Total syscalls made: %d\n", final_count - initial_count);
+    int final_cpu_count = get_all_cpus_syscalls();
+    printf(1, "Final global syscall count: %d\n", final_count);
+    printf(1, "Final per-CPU syscall count: %d\n", final_cpu_count);
+    printf(1, "Total syscalls made (global): %d\n", final_count - initial_count);
+    printf(1, "Total syscalls made (per-CPU): %d\n", final_cpu_count - initial_cpu_count);
 
     // Open log file to record results
     int log_fd = open(LOGFILE, O_CREATE | O_WRONLY);
     if(log_fd >= 0) {
-        write_log(log_fd, "Initial count: %d\n", initial_count);
-        write_log(log_fd, "Final count: %d\n", final_count);
-        write_log(log_fd, "Total syscalls: %d\n", final_count - initial_count);
+        write_log(log_fd, "Initial global count: %d\n", initial_count);
+        write_log(log_fd, "Initial CPU count: %d\n", initial_cpu_count);
+        write_log(log_fd, "Final global count: %d\n", final_count);
+        write_log(log_fd, "Final CPU count: %d\n", final_cpu_count);
+        write_log(log_fd, "Total global syscalls: %d\n", final_count - initial_count);
+        write_log(log_fd, "Total CPU syscalls: %d\n", final_cpu_count - initial_cpu_count);
         close(log_fd);
     }
 
