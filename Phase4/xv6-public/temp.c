@@ -17,7 +17,10 @@ void create_processes(int num_processes) {
             exit();
         }
     }
-}
+} 
+
+
+
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {

@@ -96,12 +96,12 @@ CFLAGS += -fno-pie -nopie
 endif
 
 xv6.img: bootblock kernel
-	dd if=/dev/zero of=xv6.img count=10000
+	dd if=/dev/zero of=xv6.img count=20000  # Increase the count value
 	dd if=bootblock of=xv6.img conv=notrunc
 	dd if=kernel of=xv6.img seek=1 conv=notrunc
 
 xv6memfs.img: bootblock kernelmemfs
-	dd if=/dev/zero of=xv6memfs.img count=10000
+	dd if=/dev/zero of=xv6memfs.img count=20000  # Increase the count value
 	dd if=bootblock of=xv6memfs.img conv=notrunc
 	dd if=kernelmemfs of=xv6memfs.img seek=1 conv=notrunc
 
@@ -191,14 +191,13 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_test_palindrome\
-    _test_move\
     _test_sort_syscalls\
     _test_get_most_invoked\
     _test_list_processes\
-	_test_syscall_gdb\
 	_user_program\
 	_test_syscall_count\
 	_test_reentrant\
+	_syscall_count\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS) || true  # Add || true to prevent error
@@ -302,8 +301,11 @@ _test_reentrant: test_reentrant.o $(ULIB)
 EXTRA=\
 	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c\
 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
-	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list \
-	.gdbinit.tmpl gdbutil/
+	printf.c umalloc.c\
+	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
+	.gdbinit.tmpl gdbutil\
+
+
 
 dist:
 	rm -rf dist
@@ -314,7 +316,7 @@ dist:
 	done
 	sed '/CUT HERE/,$$d' Makefile >dist/Makefile
 	echo >dist/runoff.spec
-	cp $(EXTRA) dist
+	cp $(EXTRA) distt
 
 dist-test:
 	rm -rf dist

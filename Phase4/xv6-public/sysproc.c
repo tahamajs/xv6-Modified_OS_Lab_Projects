@@ -182,8 +182,3 @@ int sys_nsyscalls(void) {
 int sys_test_syscall_count(void) {
     return myproc()->syscall_count;
 }
-
-int sys_nsyscalls(void)
-{
-  return myproc()->syscall_count;
-}

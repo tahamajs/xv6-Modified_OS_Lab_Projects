@@ -1,9 +1,8 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#include "syscall.h"
 
-int main (void) {
+int main(void) {
     // Make a few system calls before checking count
     getpid();
     sleep(1);
