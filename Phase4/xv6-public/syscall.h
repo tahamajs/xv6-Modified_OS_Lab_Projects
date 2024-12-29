@@ -39,7 +39,9 @@
 #define SYS_bjsproc                 38
 #define SYS_bjssys                  39
 #define SYS_user_program            40
-#define SYS_set_SJF_params          41  // Use the next available syscall number
+#define SYS_set_SJF_params           41  // Use the next available syscall number
+#define SYS_nsyscalls            42  // Add this line for the new system call
+#define SYS_test_syscall_count      43
 
 #define MAX_SYSCALLS                  100
 
@@ -48,7 +50,7 @@
 // int sys_set_scheduling_queue(void);
 // int sys_print_processes_info(void);
 
-void getnsyscall(void);
+// void getnsyscall(void);
 
 
 

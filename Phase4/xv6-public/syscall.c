@@ -9,12 +9,14 @@
 #include "mp.h"
 #include "spinlock.h"
 #include "reentrantlock.h"
-// int syscalls[MAX_SYSCALLS] = {0};  // Initialize with default values if needed
-// struct nsyslock nsys;
+
+// Declare the functions
+extern int sys_nsyscalls(void);
+extern int sys_test_syscall_count(void);
+
 struct nsyslock nsys;
 extern int global_syscall_count;
 extern struct spinlock global_syscall_lock;
-
 
 // Fetch the int at addr from the current process.
 int fetchint(uint addr, int* ip) {
@@ -94,20 +96,12 @@ extern int sys_changequeue(void);
 extern int sys_set_sjf_proc(void);
 extern int sys_set_sjf_sys(void);
 extern int sys_user_program(void);
-// extern int sys_set_SJF_params(void);
 
 int sys_scinfo(void);     // forward
 int sys_reacquire(void);  // forward
 int sys_rerelease(void);  // forward
-
-
-// Fetch the nul-terminated string at addr from the current process.
-// Doesn't actually copy the string - just sets *pp to point at it.
-// Returns length of string, not i
-// Fetch the nth word-sized system call argument as a pointer
-// to a block of memory of size bytes.  Check that the pointer
-// lies within the process address space.
-
+extern int sys_nsyscalls(void);
+extern int sys_test_syscall_count(void);
 
 // Fetch the nth word-sized system call argument as a string pointer.
 // Check that the pointer is valid and the string is nul-terminated.
@@ -119,7 +113,6 @@ int argstr(int n, char** pp) {
         return -1;
     return fetchstr(addr, pp);
 }
-
 
 extern int sys_chdir(void);
 extern int sys_close(void);
@@ -147,8 +140,8 @@ extern int sys_print_processes_info(void);
 extern int sys_change_queue(void);
 extern int sys_reacquire(void);
 extern int sys_rerelease(void);
-
-
+extern int sys_nsyscalls(void);
+extern int sys_test_syscall_count(void);
 
 static int (*syscalls[])(void) = {
     [SYS_fork]                    sys_fork,
@@ -186,9 +179,9 @@ static int (*syscalls[])(void) = {
     [SYS_scinfo]                  sys_scinfo,
     [SYS_reacquire]               sys_reacquire,
     [SYS_rerelease]               sys_rerelease,
-    // [SYS_set_SJF_params]          sys_set_SJF_params,
+    [SYS_nsyscalls]               sys_nsyscalls,
+    [SYS_test_syscall_count]      sys_test_syscall_count,
 };
-
 
 int syscall_counts[MAX_SYSCALLS] = {0}; 
 char* syscall_names[MAX_SYSCALLS] = {
@@ -247,5 +240,4 @@ int sys_scinfo(void) {
     return val;
 }
 
-// Dummy reacquire/rerelease using a global reentrantlock as example
 

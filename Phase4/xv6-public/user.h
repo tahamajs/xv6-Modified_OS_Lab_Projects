@@ -59,4 +59,6 @@ int set_SJF_params(int pid, int burst_time, int confidence);
 
 int user_program(void);
 
-// int print_processes_info(void);
+int nsyscalls(void);
+int reacquire(void);
+int rerelease(void);

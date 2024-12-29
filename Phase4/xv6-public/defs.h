@@ -15,6 +15,9 @@ struct bjfparams;
 struct prioritylock;
 struct reentrantlock;
 
+extern struct spinlock global_syscall_lock;
+extern int global_syscall_count;
+
 // bio.c
 void binit(void);
 struct buf* bread(uint, uint);

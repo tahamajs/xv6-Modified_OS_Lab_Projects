@@ -11,7 +11,7 @@
 #include "syscall.h"  // Add this line to include the getnsyscall function
 
 // Declare the getnsyscall function
-// extern void getnsyscall(void);
+extern void getnsyscall(void);
 
 struct proc* select_round_robin(void);
 struct proc* select_sjf(void);

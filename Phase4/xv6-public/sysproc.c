@@ -10,9 +10,7 @@
 
 // Add function declarations
 int set_sjf_proc(int pid, int priority_ratio, int burst_time);
-
 int set_sjf_sys(int priority_ratio, int burst_time);
-
 int print_processes_infos(void);
 void sort_syscalls(void);
 int get_most_invoked(void);
@@ -29,7 +27,6 @@ int sys_set_scheduling_queue(void)
 
     return change_queue(pid, queue);
 }
-
 
 int sys_set_sjf_proc(void) {
     int pid;
@@ -52,28 +49,20 @@ int sys_print_processes_info(void) {
     return 0;
 }
 
-int
-sys_fork(void)
-{
+int sys_fork(void) {
   return fork();
 }
 
-int
-sys_exit(void)
-{
+int sys_exit(void) {
   exit();
   return 0;  // not reached
 }
 
-int
-sys_wait(void)
-{
+int sys_wait(void) {
   return wait();
 }
 
-int
-sys_kill(void)
-{
+int sys_kill(void) {
   int pid;
 
   if(argint(0, &pid) < 0)
@@ -81,15 +70,11 @@ sys_kill(void)
   return kill(pid);
 }
 
-int
-sys_getpid(void)
-{
+int sys_getpid(void) {
   return myproc()->pid;
 }
 
-int
-sys_sbrk(void)
-{
+int sys_sbrk(void) {
   int addr;
   int n;
 
@@ -101,9 +86,7 @@ sys_sbrk(void)
   return addr;
 }
 
-int
-sys_sleep(void)
-{
+int sys_sleep(void) {
   int n;
   uint ticks0;
 
@@ -124,9 +107,7 @@ sys_sleep(void)
 
 // return how many clock tick interrupts have occurred
 // since start.
-int
-sys_uptime(void)
-{
+int sys_uptime(void) {
   uint xticks;
 
   acquire(&tickslock);
@@ -135,9 +116,7 @@ sys_uptime(void)
   return xticks;
 }
 
-int
-sys_create_palindrome(void)
-{
+int sys_create_palindrome(void) {
     int num;
     if (argint(0, &num) < 0)
         return -1;
@@ -154,20 +133,13 @@ sys_create_palindrome(void)
     return 0;
 }
 
-
-int
-sys_sort_syscalls(void)
-{
+int sys_sort_syscalls(void) {
   sort_syscalls();
   return 0;
 }
 
-
-int
-sys_get_most_invoked_syscall(void)
-{
+int sys_get_most_invoked_syscall(void) {
   return get_most_invoked();
-
 }
 
 // Correct function names
@@ -176,9 +148,7 @@ int sys_list_all_processes(void) {
     return 0;
 }
 
-int
-sys_change_queue(void)
-{
+int sys_change_queue(void) {
   int pid, new_queue_level;
   if(argint(0, &pid) < 0)
     return -1;
@@ -192,7 +162,6 @@ int sys_chqueue(void) {
     return sys_change_queue();
 }
 
-
 // static struct reentrantlock testlock;
 
 int sys_reacquire(void) {
@@ -203,4 +172,18 @@ int sys_reacquire(void) {
 int sys_rerelease(void) {
     releasereentrantlock(&testlock);
     return 0;
+}
+
+int sys_nsyscalls(void) {
+    getnsyscall();  // This calls the implementation we already have
+    return 0;
+}
+
+int sys_test_syscall_count(void) {
+    return myproc()->syscall_count;
+}
+
+int sys_nsyscalls(void)
+{
+  return myproc()->syscall_count;
 }
