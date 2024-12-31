@@ -20,7 +20,6 @@ struct cpu {
     int time_slice;            // Time slice for the current queue
     int current_queue;         // Current queue being scheduled
     int queue_weights[3];      // Weights for the queues
-    
 };
 
 

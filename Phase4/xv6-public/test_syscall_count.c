@@ -5,37 +5,43 @@
 
 #define NUM_PROCESSES 4
 #define NUM_ITERATIONS 100
-#define LOGFILE "syscall_test.log"
+#define CPUS 4
+#define LOGFILE "./syscall_test.log"
+
 
 // Helper function to write formatted string to file
-void write_log(int fd, const char *format, ...) {
+void write_log(int fd, const char *format, int value) {
     char buf[256];
     int i = 0;
     
-    while(*format) {
-        if(*format != '%') {
+    while (*format) {
+        if (*format != '%') {
             buf[i++] = *format++;
             continue;
         }
         format++; // Skip '%'
-        if(*format == 'd') {
-            int val = *(int*)(&format + 1);
+        if (*format == 'd') {
             char num[10];
             int j = 0;
-            if(val == 0) num[j++] = '0';
-            else {
-                while(val > 0) {
-                    num[j++] = '0' + (val % 10);
-                    val /= 10;
+            if (value == 0) {
+                num[j++] = '0';
+            } else {
+                int temp_val = value;
+                while (temp_val > 0) {
+                    num[j++] = '0' + (temp_val % 10);
+                    temp_val /= 10;
                 }
             }
-            while(--j >= 0) buf[i++] = num[j];
+            while (--j >= 0) {
+                buf[i++] = num[j];
+            }
         }
         format++;
     }
     buf[i] = '\0';
     write(fd, buf, strlen(buf));
 }
+
 
 void child_process(int id) {
     char filename[32];
@@ -53,23 +59,35 @@ void child_process(int id) {
     // Perform multiple system calls
     for(int i = 0; i < NUM_ITERATIONS; i++) {
         char msg[64];
-        printf(1, "Process %d: Iteration %d\n", id, i);
         
         // Mix in other system calls
         getpid();
         sleep(1);
         uptime();
     }
+    printf(1, "Process %d: completed\n", id);
 
     close(fd);
     exit();
 }
 
 int main(void) {
+    int open_init = nsyscalls();
+    int fd = open("test.txt", O_CREATE | O_WRONLY);
+    int open_final = nsyscalls() - 1;
+    printf(1,"Open syscall count: %d\n", open_final - open_init);
+    int write_init = nsyscalls();
+    write(fd,"HI",2);
+    int write_final = nsyscalls() - 1;
+    printf(1,"write syscall count: %d\n", write_final - write_init);
+    int close_init = nsyscalls();
+    close(fd);
+    int close_final_count = nsyscalls() - 1;
+    printf(1,"close syscall count: %d\n", close_final_count - close_init);
     int initial_count = nsyscalls();
     int initial_cpu_count = get_all_cpus_syscalls();
     printf(1, "Initial global syscall count: %d\n", initial_count);
-    printf(1, "Initial per-CPU syscall count: %d\n", initial_cpu_count);
+    printf(1, "Initial CPUs syscall count: %d\n", initial_cpu_count);
 
     // Create multiple processes
     int pids[NUM_PROCESSES];
@@ -93,9 +111,10 @@ int main(void) {
     int final_count = nsyscalls();
     int final_cpu_count = get_all_cpus_syscalls();
     printf(1, "Final global syscall count: %d\n", final_count);
-    printf(1, "Final per-CPU syscall count: %d\n", final_cpu_count);
+    printf(1, "Final CPUs syscall count: %d\n", final_cpu_count);
     printf(1, "Total syscalls made (global): %d\n", final_count - initial_count);
-    printf(1, "Total syscalls made (per-CPU): %d\n", final_cpu_count - initial_cpu_count);
+    printf(1, "Total syscalls made by CPUs: %d\n",final_cpu_count - initial_cpu_count);
+    printf(1, "Total syscalls made (per-CPU): %d\n", (final_cpu_count - initial_cpu_count) / CPUS);
 
     // Open log file to record results
     int log_fd = open(LOGFILE, O_CREATE | O_WRONLY);

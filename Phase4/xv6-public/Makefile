@@ -235,7 +235,7 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 	then echo "-gdb tcp::$(GDBPORT)"; \
 	else echo "-s -p $(GDBPORT)"; fi)
 ifndef CPUS
-CPUS := 1
+CPUS := 4
 endif
 CFLAGS += -DCPUS=$(CPUS)
 
@@ -270,21 +270,6 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 
 # Lists the object files for the user libraries needed by your program
 ULIB = ulib.o usys.o printf.o umalloc.o
-
-encode: encode.o $(ULIB)
-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o encode encode.o $(ULIB)
-	$(OBJDUMP) -S encode > encode.asm
-	$(OBJDUMP) -t encode | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > encode.sym
-
-decode: decode.o $(ULIB)
-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o decode decode.o $(ULIB)
-	$(OBJDUMP) -S decode > decode.asm
-	$(OBJDUMP) -t decode | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > decode.sym
-
-fibonacci: fibonacci.o $(ULIB)
-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o fibonacci fibonacci.o $(ULIB)
-	$(OBJDUMP) -S fibonacci > fibonacci.asm
-	$(OBJDUMP) -t fibonacci | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > fibonacci.sym
 
 # Add this target to help debug mkfs issues
 debug-mkfs: mkfs
