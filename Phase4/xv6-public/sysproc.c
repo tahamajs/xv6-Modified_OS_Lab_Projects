@@ -165,13 +165,11 @@ int sys_chqueue(void) {
 // static struct reentrantlock testlock;
 
 int sys_reacquire(void) {
-    acquirereentrantlock(&testlock);
-    return 0;
+    return acquirereentrantlock(&testlock);
 }
 
-int sys_rerelease(void) {
-    releasereentrantlock(&testlock);
-    return 0;
+int sys_rerelease(void) { 
+  return releasereentrantlock(&testlock); 
 }
 
 // int sys_nsyscalls(void) {

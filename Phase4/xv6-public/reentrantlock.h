@@ -15,7 +15,7 @@ extern struct reentrantlock testlock;
 
 // Function prototypes
 void initreentrantlock(struct reentrantlock *r, char *name);
-void acquirereentrantlock(struct reentrantlock *r);
-void releasereentrantlock(struct reentrantlock *r);
+int acquirereentrantlock(struct reentrantlock *r);
+int releasereentrantlock(struct reentrantlock *r);
 
 

@@ -172,8 +172,8 @@ int isholdingpriority(struct prioritylock*);
 
 // reentrantlock.c
 void initreentrantlock(struct reentrantlock*, char*);
-void acquirereentrantlock(struct reentrantlock*);
-void releasereentrantlock(struct reentrantlock*);
+int acquirereentrantlock(struct reentrantlock*);
+int releasereentrantlock(struct reentrantlock*);
 
 // string.c
 int memcmp(const void*, const void*, uint);

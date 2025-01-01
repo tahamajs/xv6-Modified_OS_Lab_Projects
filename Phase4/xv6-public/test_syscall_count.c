@@ -55,7 +55,6 @@ void child_process(int id) {
         printf(1, "Process %d: Failed to open file\n", id);
         exit();
     }
-
     // Perform multiple system calls
     for(int i = 0; i < NUM_ITERATIONS; i++) {
         char msg[64];
@@ -84,11 +83,18 @@ int main(void) {
     close(fd);
     int close_final_count = nsyscalls() - 1;
     printf(1,"close syscall count: %d\n", close_final_count - close_init);
+
+    //Printing each character is a write system call which increments the count by 2
+    int init_syscall = nsyscalls();
+    printf(1,"Test...\n");
+    int final_syscall = nsyscalls() - 1;//decrementing by 1 so the nsyscall() wouldn't count
+    printf(1,"System calls made to print 'Test...\\n' to console: %d\n",final_syscall - init_syscall);
+
+
     int initial_count = nsyscalls();
     int initial_cpu_count = get_all_cpus_syscalls();
     printf(1, "Initial global syscall count: %d\n", initial_count);
     printf(1, "Initial CPUs syscall count: %d\n", initial_cpu_count);
-
     // Create multiple processes
     int pids[NUM_PROCESSES];
     for(int i = 0; i < NUM_PROCESSES; i++) {
@@ -108,8 +114,8 @@ int main(void) {
     }
 
     // Get final count and verify
-    int final_count = nsyscalls();
-    int final_cpu_count = get_all_cpus_syscalls();
+    int final_count = nsyscalls() - 1;
+    int final_cpu_count = get_all_cpus_syscalls() - 1;
     printf(1, "Final global syscall count: %d\n", final_count);
     printf(1, "Final CPUs syscall count: %d\n", final_cpu_count);
     printf(1, "Total syscalls made (global): %d\n", final_count - initial_count);

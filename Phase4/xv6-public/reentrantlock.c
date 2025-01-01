@@ -17,15 +17,15 @@ void initreentrantlock(struct reentrantlock *r, char *name) {
 }
 
 // Acquire the reentrant lock
-void acquirereentrantlock(struct reentrantlock *r) {
+int acquirereentrantlock(struct reentrantlock *r) {
     pushcli();
-    acquire(&r->lk);
+    acquire(&r->lk);// Acquire the spinlock to protect access to the reentrant lock
 
     if(r->locked && r->owner == myproc()->pid) {
         r->count++;
         release(&r->lk);
         popcli();
-        return;
+        return 0;
     }
     while(xchg(&r->locked, 1) != 0) {
         // simple busy-wait
@@ -35,21 +35,23 @@ void acquirereentrantlock(struct reentrantlock *r) {
 
     release(&r->lk);
     popcli();
+    return 0;
 }
 
 // Release the reentrant lock
-void releasereentrantlock(struct reentrantlock *r) {
+int releasereentrantlock(struct reentrantlock *r) {
     pushcli();
     acquire(&r->lk);
 
     if(r->owner != myproc()->pid) {
         // panic("releasereentrantlock: not owner");
-            release(&r->lk);
-    popcli();
-        return;
+        release(&r->lk);
+        popcli();
+        return -1;
     }
     if(r->count == 0) {
-        panic("releasereentrantlock: lock not held");
+        // panic("releasereentrantlock: lock not held");
+        return -1;
     }
     r->count--;
     if(r->count == 0) {
@@ -59,4 +61,5 @@ void releasereentrantlock(struct reentrantlock *r) {
 
     release(&r->lk);
     popcli();
+    return 0;
 }
