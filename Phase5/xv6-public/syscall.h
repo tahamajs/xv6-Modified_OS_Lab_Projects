@@ -47,15 +47,9 @@
 
 #define MAX_SYSCALLS                  100
 
-// int user_program(void);
-
-// int sys_set_scheduling_queue(void);
-// int sys_print_processes_info(void);
-
-// void getnsyscall(void);
-
-void* open_sharedmem(int shmid);
-int close_sharedmem(void *addr);
+// Remove these function declarations - they don't belong in syscall.h
+// void* open_sharedmem(int shmid);
+// int close_sharedmem(void *addr);
 
 
 

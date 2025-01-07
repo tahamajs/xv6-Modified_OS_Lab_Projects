@@ -1053,7 +1053,10 @@ int sys_open_sharedmem(void) {
     int shmid;
     if(argint(0, &shmid) < 0)
         return -1;
-    return (int)open_sharedmem(shmid);
+    void* addr = open_sharedmem(shmid);
+    if(addr == (void*)-1)
+        return -1;
+    return (int)addr;
 }
 
 int sys_close_sharedmem(void) {

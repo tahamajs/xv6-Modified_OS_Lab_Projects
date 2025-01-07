@@ -95,7 +95,7 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
 int
-mappages(pde_t *pgdir, char *va, uint size, uint pa, int perm)
+mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)  // Changed char* to void*
 {
   char *a, *last;
   pte_t *pte;
