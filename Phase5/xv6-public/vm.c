@@ -9,21 +9,8 @@
 #include "spinlock.h"
 #include "vm.h"
 
-#define SHAREDREGIONS 64
-
-struct shmRegion {
-  uint key;                       
-  uint size;                      
-  int shmid;                      
-  void *physicalAddr[SHAREDREGIONS]; 
-  uint shm_segsz;                 
-  int shm_nattch;                 
-};
-
-struct shm_manager {
-  struct spinlock lock;
-  struct shmRegion allRegions[SHAREDREGIONS];
-} shmTable;
+// Define shmTable (remove struct definitions since they're in vm.h)
+struct shm_manager shmTable;
 
 // Helper to create a new shared region:
 int create_shm(uint size, int shmid) {
@@ -82,7 +69,7 @@ seginit(void)
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page table pages.
-static pte_t *
+pte_t *
 walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
   pde_t *pde;
@@ -107,8 +94,8 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
-static int
-mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
+int
+mappages(pde_t *pgdir, char *va, uint size, uint pa, int perm)
 {
   char *a, *last;
   pte_t *pte;
