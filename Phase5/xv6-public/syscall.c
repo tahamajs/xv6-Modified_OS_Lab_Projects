@@ -102,6 +102,8 @@ int sys_reacquire(void);  // forward
 int sys_rerelease(void);  // forward
 extern int sys_nsyscalls(void);
 extern int sys_test_syscall_count(void);
+extern int sys_open_sharedmem(void);
+extern int sys_close_sharedmem(void);
 
 // Fetch the nth word-sized system call argument as a string pointer.
 // Check that the pointer is valid and the string is nul-terminated.
@@ -142,6 +144,8 @@ extern int sys_reacquire(void);
 extern int sys_rerelease(void);
 extern int sys_nsyscalls(void);
 extern int sys_test_syscall_count(void);
+extern int sys_open_sharedmem(void);
+extern int sys_close_sharedmem(void);
 
 static int (*syscalls[])(void) = {
     [SYS_fork]                    sys_fork,
@@ -181,6 +185,8 @@ static int (*syscalls[])(void) = {
     [SYS_rerelease]               sys_rerelease,
     [SYS_nsyscalls]               sys_nsyscalls,
     [SYS_get_all_cpus_syscalls]   sys_get_all_cpus_syscalls,
+    [SYS_open_sharedmem]          sys_open_sharedmem,
+    [SYS_close_sharedmem]         sys_close_sharedmem,
 };
 
 int syscall_counts[MAX_SYSCALLS] = {0}; 
