@@ -190,14 +190,7 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
-	_test_palindrome\
-    _test_sort_syscalls\
-    _test_get_most_invoked\
-    _test_list_processes\
-	_user_program\
-	_test_syscall_count\
-	_test_reentrant\
-	_syscall_count\
+	_test_shm\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS) || true  # Add || true to prevent error

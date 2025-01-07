@@ -1049,23 +1049,6 @@ int set_SJF_params(int pid, int burst_time, int confidence) {
 
 extern int create_shm(uint size, int shmid);  // From vm.c
 
-int sys_open_sharedmem(void) {
-    int shmid;
-    if(argint(0, &shmid) < 0)
-        return -1;
-    void* addr = open_sharedmem(shmid);
-    if(addr == (void*)-1)
-        return -1;
-    return (int)addr;
-}
-
-int sys_close_sharedmem(void) {
-    char *addr;
-    if(argptr(0, &addr, sizeof(addr)) < 0)
-        return -1;
-    return close_sharedmem((void*)addr);
-}
-
 // Attach the shared memory to the current process:
 void* open_sharedmem(int shmid) {
     struct proc* curproc = myproc();

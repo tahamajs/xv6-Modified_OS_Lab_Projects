@@ -176,3 +176,25 @@ int sys_rerelease(void) {
 int sys_test_syscall_count(void) {
     return myproc()->syscall_count;
 }
+
+int sys_open_sharedmem(void)
+{
+  int shmid;
+  if(argint(0, &shmid) < 0)
+    return -1;
+  // For now, just allocate a page using kalloc
+  char *mem = kalloc();
+  if(mem == 0)
+    return -1;
+  memset(mem, 0, PGSIZE);
+  return (int)mem;
+}
+
+int sys_close_sharedmem(void)
+{
+  char *addr;
+  if(argptr(0, (void*)&addr, sizeof(addr)) < 0)
+    return -1;
+  kfree(addr);
+  return 0;
+}

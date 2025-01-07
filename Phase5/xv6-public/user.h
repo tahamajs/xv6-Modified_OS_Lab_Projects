@@ -62,3 +62,6 @@ int user_program(void);
 int nsyscalls(void);
 int reacquire(void);
 int rerelease(void);
+
+int open_sharedmem(int shmid);
+int close_sharedmem(void *addr);
