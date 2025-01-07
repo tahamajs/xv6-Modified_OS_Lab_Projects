@@ -4,7 +4,10 @@
 #define SHAREDREGIONS 64
 
 struct shmRegion {
-    // ...existing fields...
+    int shmid;
+    int size;              // number of pages
+    int shm_nattch;        // number of attached processes
+    uint physicalAddr[64]; // physical frames for each page
 };
 
 struct shm_manager {
