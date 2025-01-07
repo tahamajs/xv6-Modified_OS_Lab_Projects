@@ -55,6 +55,14 @@ enum procstate { UNUSED,
 
 #define MAX_AGE 800 
 
+#define SHAREDREGIONS 64
+
+typedef struct sharedPages {
+  uint key;
+  uint size;       
+  int shmid;
+  void *virtualAddr;
+} sharedPages;
 
 // schedule queue
 enum schedqueue {
@@ -110,6 +118,6 @@ struct proc {
     int wait_time;   // Time the process has been waiting in RUNNABLE state
     int syscall_count ;
     int consecutive_run; // Number of consecutive runs
-    
+    sharedPages pages[SHAREDREGIONS]; // Add an array to track shared memory attachments
 };
 
