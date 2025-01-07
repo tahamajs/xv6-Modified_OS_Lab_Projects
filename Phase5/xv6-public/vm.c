@@ -7,6 +7,54 @@
 #include "proc.h"
 #include "elf.h"
 
+#define SHAREDREGIONS 64
+
+struct shmRegion {
+  uint key;                       
+  uint size;                      
+  int shmid;                      
+  void *physicalAddr[SHAREDREGIONS]; 
+  uint shm_segsz;                 
+  int shm_nattch;                 
+};
+
+struct {
+  struct spinlock lock;
+  struct shmRegion allRegions[SHAREDREGIONS];
+} shmTable;
+
+// Helper to create a new shared region:
+int create_shm(uint size, int shmid) {
+  acquire(&shmTable.lock);
+  if(size <= 0) {
+    release(&shmTable.lock);
+    return -1;
+  }
+
+  int num_of_pages = (size / PGSIZE) + ((size % PGSIZE) ? 1 : 0);
+  if(num_of_pages > SHAREDREGIONS){
+    release(&shmTable.lock);
+    return -1;
+  }
+
+  for(int i = 0; i < num_of_pages; i++){
+    char *new_page = kalloc();
+    if(!new_page){
+      release(&shmTable.lock);
+      return -1;
+    }
+    memset(new_page, 0, PGSIZE);
+    shmTable.allRegions[shmid].physicalAddr[i] = (void *)V2P(new_page);
+  }
+
+  shmTable.allRegions[shmid].size = num_of_pages;
+  shmTable.allRegions[shmid].shmid = shmid;
+  shmTable.allRegions[shmid].shm_segsz = size;
+  shmTable.allRegions[shmid].shm_nattch = 0;
+  release(&shmTable.lock);
+  return shmid;
+}
+
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
 
