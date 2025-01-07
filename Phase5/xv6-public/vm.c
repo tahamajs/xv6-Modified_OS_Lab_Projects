@@ -6,6 +6,8 @@
 #include "mmu.h"
 #include "proc.h"
 #include "elf.h"
+#include "spinlock.h"
+#include "vm.h"
 
 #define SHAREDREGIONS 64
 
@@ -18,7 +20,7 @@ struct shmRegion {
   int shm_nattch;                 
 };
 
-struct {
+struct shm_manager {
   struct spinlock lock;
   struct shmRegion allRegions[SHAREDREGIONS];
 } shmTable;
@@ -431,6 +433,11 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
     va = va0 + PGSIZE;
   }
   return 0;
+}
+
+// Initialize lock if not done elsewhere:
+void init_shm(void) {
+    initlock(&shmTable.lock, "shmTableLock");
 }
 
 //PAGEBREAK!

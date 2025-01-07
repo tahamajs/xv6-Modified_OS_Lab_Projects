@@ -9,7 +9,7 @@
 #include "prioritylock.h"
 #include "string.h"
 #include "syscall.h"  // Add this line to include the getnsyscall function
-
+#include "vm.h" // Instead of #include "vm.c"
 // Declare the getnsyscall function
 extern void getnsyscall(void);
 extern int sys_nsyscalls(void);

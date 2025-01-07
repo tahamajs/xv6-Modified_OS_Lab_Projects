@@ -162,7 +162,6 @@ int sys_chqueue(void) {
     return sys_change_queue();
 }
 
-// static struct reentrantlock testlock;
 
 int sys_reacquire(void) {
     return acquirereentrantlock(&testlock);
@@ -172,19 +171,7 @@ int sys_rerelease(void) {
   return releasereentrantlock(&testlock); 
 }
 
-// int sys_nsyscalls(void) {
-//     return sys_scinfo(); // Use existing scinfo functionality to return count
-// }
 
-// int sys_get_all_cpus_syscalls(void) {
-//     int total = 0;
-//     pushcli();
-//     for(int i = 0; i < ncpu; i++) {
-//         total += cpus[i].nsyscall;
-//     }
-//     popcli();
-//     return total;
-// }
 
 int sys_test_syscall_count(void) {
     return myproc()->syscall_count;
