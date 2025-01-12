@@ -6,43 +6,8 @@
 #include "mmu.h"
 #include "proc.h"
 #include "elf.h"
-#include "spinlock.h"
 #include "vm.h"
-
-// Define shmTable (remove struct definitions since they're in vm.h)
-struct shm_manager shmTable;
-
-// Helper to create a new shared region:
-int create_shm(uint size, int shmid) {
-  acquire(&shmTable.lock);
-  if(size <= 0) {
-    release(&shmTable.lock);
-    return -1;
-  }
-
-  int num_of_pages = (size / PGSIZE) + ((size % PGSIZE) ? 1 : 0);
-  if(num_of_pages > SHAREDREGIONS){
-    release(&shmTable.lock);
-    return -1;
-  }
-
-  for(int i = 0; i < num_of_pages; i++){
-    char *new_page = kalloc();
-    if(!new_page){
-      release(&shmTable.lock);
-      return -1;
-    }
-    memset(new_page, 0, PGSIZE);
-    shmTable.allRegions[shmid].physicalAddr[i] = (void *)V2P(new_page);
-  }
-
-  shmTable.allRegions[shmid].size = num_of_pages;
-  shmTable.allRegions[shmid].shmid = shmid;
-  shmTable.allRegions[shmid].shm_segsz = size;
-  shmTable.allRegions[shmid].shm_nattch = 0;
-  release(&shmTable.lock);
-  return shmid;
-}
+#include "spinlock.h"
 
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
@@ -69,7 +34,7 @@ seginit(void)
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page table pages.
-pte_t *
+static pte_t *
 walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
   pde_t *pde;
@@ -94,8 +59,8 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
-int
-mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)  // Changed char* to void*
+static int
+mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 {
   char *a, *last;
   pte_t *pte;
@@ -422,15 +387,92 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   return 0;
 }
 
-// Initialize lock if not done elsewhere:
-void init_shm(void) {
-    initlock(&shmTable.lock, "shmTableLock");
+//PAGEBREAK!
+// Blank page.
+//PAGEBREAK!
+// Blank page.
+//PAGEBREAK!
+// Blank page.
+
+struct SharedRegion SharedRegion;
+
+char* open_sharedmem(int id) {
+    struct proc* proc = myproc();
+    acquire(&SharedRegion.lock);
+    int size = PGSIZE;
+
+    for (int i = 0; i < NSHPAGE; i++) {
+        if (SharedRegion.pages[i].id == id) {
+            SharedRegion.pages[i].n_access++;
+            char* vaddr = (char*)PGROUNDUP(proc->sz);
+            if (mappages(proc->pgdir, vaddr, PGSIZE, SharedRegion.pages[i].physicalAddr, PTE_W | PTE_U) < 0)
+                return -1;
+            proc->shmemAddr = (uint)vaddr;
+            proc->sz += size;
+            release(&SharedRegion.lock);
+            return vaddr;
+        }
+    }
+
+    int pgidx = -1;
+    for (int i = 0; i < NSHPAGE; i++) {
+        if (SharedRegion.pages[i].id == 0) {
+            SharedRegion.pages[i].id = id;
+            pgidx = i;
+            break;
+        }
+    }
+
+    if (pgidx == -1) {
+        cprintf("shared memory: pages are full\n");
+        release(&SharedRegion.lock);
+        return -1;
+    }
+
+    char* paddr = kalloc();
+    if (paddr == 0) {
+        cprintf("shared memory: out of memory\n");
+        release(&SharedRegion.lock);
+        return -1;
+    }
+
+    memset(paddr, 0, PGSIZE);
+    char* vaddr = (char*)PGROUNDUP(proc->sz);
+    SharedRegion.pages[pgidx].physicalAddr = (uint)V2P(paddr);
+
+    if (mappages(proc->pgdir, vaddr, PGSIZE, SharedRegion.pages[pgidx].physicalAddr, PTE_W | PTE_U) < 0)
+        return -1;
+
+    SharedRegion.pages[pgidx].n_access++;
+    proc->shmemAddr = (uint)vaddr;
+    proc->sz += size;
+
+    release(&SharedRegion.lock);
+    return vaddr;
 }
 
-//PAGEBREAK!
-// Blank page.
-//PAGEBREAK!
-// Blank page.
-//PAGEBREAK!
-// Blank page.
+int close_sharedmem(int id) {
+    struct proc* proc = myproc();
+    int size = PGSIZE;
+    acquire(&SharedRegion.lock);
 
+    for (int i = 0; i < NSHPAGE; i++) {
+        if (SharedRegion.pages[i].id == id) {
+            SharedRegion.pages[i].n_access--;
+
+            uint a = (uint)PGROUNDUP(proc->shmemAddr);
+            pte_t* pte = walkpgdir(proc->pgdir, (char*)a, 0);
+            *pte = 0;
+
+            if (SharedRegion.pages[i].n_access == 0)
+                SharedRegion.pages[i].id = 0;
+
+            release(&SharedRegion.lock);
+            return 0;
+        }
+    }
+
+    release(&SharedRegion.lock);
+    cprintf("No shared memory with this ID.\n");
+    return -1;
+}

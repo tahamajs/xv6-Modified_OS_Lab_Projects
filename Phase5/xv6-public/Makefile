@@ -190,7 +190,14 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
-	_test_shm\
+	_test_palindrome\
+    _test_sort_syscalls\
+    _test_get_most_invoked\
+    _test_list_processes\
+	_user_program\
+	_test_syscall_count\
+	_test_shmem\
+	_syscall_count\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS) || true  # Add || true to prevent error
@@ -272,9 +279,10 @@ debug-mkfs: mkfs
 # _test_syscall_count: test_syscall_count.o $(ULIB)
 # 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _test_syscall_count test_syscall_count.o $(ULIB)
 
-# Add explicit dependencies for test_reentrant
-_test_reentrant: test_reentrant.o $(ULIB)
-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _test_reentrant test_reentrant.o $(ULIB)
+# Add explicit dependencies for test_shmem
+_test_shmem: test_shmem.o $(ULIB)
+	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _test_shmem test_shmem.o $(ULIB)
+
 
 EXTRA=\
 	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c\

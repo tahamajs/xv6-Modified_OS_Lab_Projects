@@ -1,7 +1,5 @@
 #pragma once
 
-#include "mmu.h"  // Add this line to include the definition of pte_t
-
 struct buf;
 struct context;
 struct file;
@@ -226,12 +224,8 @@ void switchuvm(struct proc*);
 void switchkvm(void);
 int copyout(pde_t*, uint, void*, uint);
 void clearpteu(pde_t *pgdir, char *uva);
-void* open_sharedmem(int);
-int close_sharedmem(void*);
-int create_shm(uint, int);
-pte_t* walkpgdir(pde_t *pgdir, const void *va, int alloc);
-int mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm);
-void init_shm(void);
+char* open_sharedmem(int id);
+int close_sharedmem(int id);
 
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 #define MAX_SYSCALLS 100

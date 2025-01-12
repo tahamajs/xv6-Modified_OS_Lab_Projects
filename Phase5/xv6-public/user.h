@@ -63,5 +63,5 @@ int nsyscalls(void);
 int reacquire(void);
 int rerelease(void);
 
-int open_sharedmem(int shmid);
-int close_sharedmem(void *addr);
+char* open_sharedmem(int);
+int close_sharedmem(int);

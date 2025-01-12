@@ -9,7 +9,7 @@
 #include "prioritylock.h"
 #include "string.h"
 #include "syscall.h"  // Add this line to include the getnsyscall function
-#include "vm.h" // Instead of #include "vm.c"
+
 // Declare the getnsyscall function
 extern void getnsyscall(void);
 extern int sys_nsyscalls(void);
@@ -1045,107 +1045,6 @@ int set_SJF_params(int pid, int burst_time, int confidence) {
     }
     release(&ptable.lock);
     return -1;
-}
-
-extern int create_shm(uint size, int shmid);  // From vm.c
-
-// Attach the shared memory to the current process:
-void* open_sharedmem(int shmid) {
-    struct proc* curproc = myproc();
-    if(shmid < 0 || shmid >= SHAREDREGIONS)
-        return (void*)-1;
-
-    acquire(&shmTable.lock);
-    int existing = shmTable.allRegions[shmid].shmid;
-    if(existing == -1) {
-        // Region doesn't exist yet, create it
-        if(create_shm(PGSIZE, shmid) < 0){
-            release(&shmTable.lock);
-            return (void*)-1;
-        }
-    }
-    // Find a slot in proc->pages
-    int slot = -1;
-    for(int i=0; i<SHAREDREGIONS; i++){
-        if(curproc->pages[i].shmid == 0){
-            slot = i;
-            break;
-        }
-    }
-    if(slot < 0){
-        release(&shmTable.lock);
-        return (void*)-1;
-    }
-
-    // Allocate a virtual address (just after process size, for example)
-    uint va = PGROUNDUP(curproc->sz);
-    uint numPages = shmTable.allRegions[shmid].size;
-    uint needed = numPages * PGSIZE;
-    curproc->sz = va + needed;
-
-    for(int i=0; i < numPages; i++){
-        if(mappages(curproc->pgdir, (char*)(va + i*PGSIZE), PGSIZE,
-            (uint)shmTable.allRegions[shmid].physicalAddr[i], PTE_W|PTE_U) < 0){
-            release(&shmTable.lock);
-            return (void*)-1;
-        }
-    }
-
-    curproc->pages[slot].shmid       = shmid;
-    curproc->pages[slot].virtualAddr = (void*)va;
-    curproc->pages[slot].size        = numPages;
-    shmTable.allRegions[shmid].shm_nattch++;
-    release(&shmTable.lock);
-
-    return (void*)va;
-}
-
-// Detach from the shared region and free if refcount hits 0
-int close_sharedmem(void *addr) {
-    struct proc* p = myproc();
-    acquire(&shmTable.lock);
-
-    // Find the matching entry
-    int shmid = -1, index=-1;
-    for(int i=0; i<SHAREDREGIONS; i++){
-        if(p->pages[i].virtualAddr == addr){
-            shmid = p->pages[i].shmid;
-            index = i;
-            break;
-        }
-    }
-    if(shmid < 0){
-        release(&shmTable.lock);
-        return -1;
-    }
-    // Unmap pages
-    int count = shmTable.allRegions[shmid].size;
-    for(int i=0; i < count; i++){
-        pte_t *pte = walkpgdir(p->pgdir, (char*)((uint)addr + i*PGSIZE), 0);
-        if(pte) *pte = 0;
-    }
-    // Clear the slot
-    p->pages[index].shmid = 0;
-    p->pages[index].virtualAddr = 0;
-    p->pages[index].size = 0;
-
-    // Decrement reference
-    shmTable.allRegions[shmid].shm_nattch--;
-    if(shmTable.allRegions[shmid].shm_nattch <= 0){
-        // Free physical pages
-        for(int i=0; i<count; i++){
-            char *frame = (char*)P2V(shmTable.allRegions[shmid].physicalAddr[i]);
-            kfree(frame);
-            shmTable.allRegions[shmid].physicalAddr[i] = 0;
-        }
-        // Mark region invalid
-        shmTable.allRegions[shmid].size = 0;
-        shmTable.allRegions[shmid].shmid = -1;
-        shmTable.allRegions[shmid].shm_nattch = 0;
-    }
-
-    release(&shmTable.lock);
-    return 0;
 }
 
 
