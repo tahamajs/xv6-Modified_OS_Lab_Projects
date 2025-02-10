@@ -92,7 +92,7 @@ Tasks include:
 - QEMU Emulator  
 - Clone the repository:
   ```sh
-  git clone https://github.com/yourusername/OS-Labs.git
+  git clone https://github.com/tahamajs/xv6-Modified_OS_Lab_Projects.git
   cd OS-Labs
   ```
 
